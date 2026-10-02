@@ -1,0 +1,61 @@
+{
+  "name": "@pgko-dev/i18n",
+  "version": "0.1.4",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pgko-dev/pgko.git",
+    "directory": "packages/i18n"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./all": {
+      "types": "./dist/all.d.ts",
+      "import": "./dist/all.js"
+    },
+    "./en": {
+      "types": "./dist/en/index.d.ts",
+      "import": "./dist/en/index.js"
+    },
+    "./zh-hans": {
+      "types": "./dist/zh-hans/index.d.ts",
+      "import": "./dist/zh-hans/index.js"
+    },
+    "./ja": {
+      "types": "./dist/ja/index.d.ts",
+      "import": "./dist/ja/index.js"
+    },
+    "./ko": {
+      "types": "./dist/ko/index.d.ts",
+      "import": "./dist/ko/index.js"
+    },
+    "./zh-hant": {
+      "types": "./dist/zh-hant/index.d.ts",
+      "import": "./dist/zh-hant/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "find-unused": "bun run scripts/find-unused-i18n.ts",
+    "clean": "bunx rimraf dist node_modules",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "devDependencies": {
+    "@pgko-dev/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

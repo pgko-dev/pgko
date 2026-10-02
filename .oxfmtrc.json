@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": true,
+  "singleQuote": false,
+  "trailingComma": "all",
+  "tabWidth": 2,
+  "printWidth": 100,
+  "endOfLine": "lf",
+  "bracketSameLine": false,
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "sortTailwindcss": {
+    "stylesheet": "./apps/web/src/index.css",
+    "functions": ["clsx", "cn", "cva"],
+    "preserveWhitespace": true
+  },
+  "sortImports": {
+    "customGroups": [
+      {
+        "groupName": "monorepo",
+        "elementNamePattern": ["@pgko-dev/**", "@repo/**"]
+      }
+    ],
+    "groups": [
+      ["type-builtin", "value-builtin"],
+      ["type-external", "value-external"],
+      "monorepo",
+      ["type-internal", "value-internal"],
+      ["type-parent", "value-parent"],
+      ["type-sibling", "value-sibling"],
+      ["type-index", "value-index"],
+      "unknown"
+    ]
+  },
+  "sortPackageJson": true,
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    ".tanstack",
+    "data",
+    "bun.lock",
+    "*.gen.ts",
+    "vendor",
+    "build",
+    "worker-configuration.d.ts",
+    "drizzle",
+    "apps/openapi/openapi.json",
+    "artifacts"
+  ]
+}

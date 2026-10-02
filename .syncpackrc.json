@@ -1,0 +1,39 @@
+{
+  "source": ["package.json", "apps/*/package.json", "packages/*/package.json"],
+  "semverGroups": [
+    {
+      "isIgnored": true
+    }
+  ],
+  "versionGroups": [
+    {
+      "label": "Use local public packages",
+      "dependencies": [
+        "@pgko-dev/tsconfig",
+        "@pgko-dev/config",
+        "@pgko-dev/i18n",
+        "@pgko-dev/env",
+        "@pgko-dev/ugc",
+        "@pgko-dev/schema",
+        "@pgko-dev/common"
+      ],
+      "dependencyTypes": ["prod", "dev", "peer", "optional"],
+      "pinVersion": "workspace:*"
+    },
+    {
+      "label": "Use the root catalog",
+      "dependencyTypes": ["prod", "dev", "peer", "optional"],
+      "policy": "catalog"
+    },
+    {
+      "dependencyTypes": ["local"],
+      "isIgnored": true
+    }
+  ],
+  "customTypes": {
+    "optional": {
+      "strategy": "versionsByName",
+      "path": "optionalDependencies"
+    }
+  }
+}

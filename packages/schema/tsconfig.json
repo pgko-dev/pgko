@@ -1,0 +1,8 @@
+{
+  "extends": "@pgko-dev/tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  "include": ["src", "@types"],
+  "exclude": ["node_modules"]
+}

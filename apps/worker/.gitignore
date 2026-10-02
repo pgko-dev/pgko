@@ -1,0 +1,16 @@
+node_modules/
+.wrangler/
+dist/
+coverage/
+*.log
+*.tsbuildinfo
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.dev.vars.example
+!*.example
+.DS_Store
+*Zone.Identifier
+
+.scannerwork/

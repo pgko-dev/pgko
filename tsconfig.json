@@ -1,0 +1,8 @@
+{
+  "extends": "./packages/tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "skipLibCheck": true
+  },
+  "include": ["scripts/**/*.ts", "packages/i18n/scripts/**/*.ts"]
+}

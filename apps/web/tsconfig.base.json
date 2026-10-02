@@ -1,0 +1,12 @@
+{
+  "extends": "@pgko-dev/tsconfig/base.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "moduleDetection": "force",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "declaration": false,
+    "declarationMap": false
+  }
+}

@@ -1,0 +1,38 @@
+sequenceDiagram
+  accTitle: Direct multipart bundle upload
+  accDescr: The browser creates a session through the API, uploads parts directly to R2, asks the API to complete the upload, then polls while a runner processes the archive and saves the bundle.
+  actor Browser
+  participant API
+  participant R2 as Cloud storage (R2)
+  participant Runner as Processing runner
+  participant DB as Database
+
+  Browser->>API: Create upload session
+  API->>R2: Start multipart upload
+  R2-->>API: Upload ID
+  API-->>Browser: Presigned part URLs
+
+  par Up to 3 parts at a time
+    Browser->>R2: PUT archive part
+  and
+    Browser->>R2: PUT archive part
+  and
+    Browser->>R2: PUT archive part
+  end
+
+  Browser->>API: Complete session with part ETags
+  API->>R2: Complete multipart upload
+  API->>R2: Verify final object size
+  API->>DB: Queue processing
+  API-->>Browser: Processing started
+
+  Runner->>DB: Claim queued session
+  Runner->>R2: Download archive
+  Runner->>Runner: Validate, extract, and convert
+  Runner->>DB: Save bundle and complete session
+
+  loop Every second until complete
+    Browser->>API: Get session status
+    API->>DB: Read session
+    API-->>Browser: Queued, processing, or bundle detail
+  end

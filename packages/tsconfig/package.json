@@ -1,0 +1,29 @@
+{
+  "name": "@pgko-dev/tsconfig",
+  "version": "0.1.4",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pgko-dev/pgko.git",
+    "directory": "packages/tsconfig"
+  },
+  "files": [
+    "base.json",
+    "build.json",
+    "react-library.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./react-library.json": "./react-library.json",
+    "./package.json": "./package.json",
+    "./build.json": "./build.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "bunx rimraf node_modules"
+  }
+}

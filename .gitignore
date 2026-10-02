@@ -1,0 +1,82 @@
+# dependencies
+node_modules
+
+# output
+out
+dist
+*.tgz
+bin
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+.env
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.local
+
+.env.api
+.env.web
+.env.pgbackrest
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# Windows Zone.Identifier (alternate data stream metadata)
+*Zone.Identifier
+
+# Database
+.storage
+
+.tanstack
+
+*.local.json
+
+*.local
+
+.playwright-mcp
+
+sync.sh
+
+# git worktrees
+.worktrees
+
+docs/*
+qodana.yaml
+
+issues.md
+
+data/
+
+*.dump
+
+temp/
+
+.agents/skills
+.scannerwork/
+
+# Release artifacts and local Worker credentials
+artifacts/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/

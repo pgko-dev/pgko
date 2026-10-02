@@ -1,0 +1,2 @@
+/download/* https://api.pgko.dev/api/download/bundles/:splat/file 302
+/*    /index.html   200

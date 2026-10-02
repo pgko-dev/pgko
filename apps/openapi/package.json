@@ -1,0 +1,26 @@
+{
+  "name": "@pgko-dev/openapi",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "bun run lint && bun run fmt && bun run tsc && bun run test && bun run build",
+    "fmt": "oxfmt --check .",
+    "fmt:w": "oxfmt .",
+    "lint": "oxlint .",
+    "lint:w": "bun --bun run oxlint . --fix",
+    "tsc": "tsc --noEmit",
+    "test": "bun test ./scripts",
+    "spec:import": "bun run scripts/import.ts",
+    "build": "bun run scripts/build.ts",
+    "preview": "bun run scripts/preview.ts"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "catalog:",
+    "@pgko-dev/tsconfig": "workspace:*",
+    "@scalar/api-reference": "catalog:",
+    "@types/bun": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

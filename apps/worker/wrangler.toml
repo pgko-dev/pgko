@@ -1,0 +1,18 @@
+"$schema" = "./node_modules/wrangler/config-schema.json"
+name = "pgko-worker"
+main = "src/index.ts"
+compatibility_date = "2026-05-31"
+preview_urls = false
+workers_dev = false
+
+routes = [
+  { pattern = "pgko.dev/bundles/*", zone_name = "pgko.dev" },
+  { pattern = "pgko.dev/users/*", zone_name = "pgko.dev" },
+]
+
+[vars]
+API_ORIGIN = "https://api.pgko.dev"
+
+[observability.logs]
+enabled = true
+invocation_logs = true
