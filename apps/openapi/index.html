@@ -27,12 +27,13 @@
         margin-right: auto;
       }
       #loading {
+        display: block;
         padding: 24px;
       }
     </style>
   </head>
   <body>
-    <div id="app"><p id="loading" role="status">Loading API reference…</p></div>
+    <div id="app"><output id="loading">Loading API reference…</output></div>
     <noscript>JavaScript is required for the API reference.</noscript>
     <script src="./scalar.js"></script>
     <script>

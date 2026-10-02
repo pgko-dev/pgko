@@ -840,7 +840,7 @@ export function ManageMetadataTab() {
                 </form.AppField>
               ))}
             </div>
-            <audio ref={previewAudioRef} onEnded={stopPreview} className="hidden" aria-hidden>
+            <audio ref={previewAudioRef} onEnded={stopPreview} hidden>
               <track kind="captions" />
             </audio>
           </CardContent>

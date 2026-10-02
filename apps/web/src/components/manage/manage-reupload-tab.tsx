@@ -169,7 +169,7 @@ export function ManageReuploadTab() {
                     />
                   ))}
                 </div>
-                <audio ref={previewAudioRef} onEnded={stopPreview} className="hidden" aria-hidden>
+                <audio ref={previewAudioRef} onEnded={stopPreview} hidden>
                   <track kind="captions" />
                 </audio>
               </div>
@@ -256,6 +256,7 @@ export function ManageReuploadTab() {
                     key={`${file.name}-${file.size}-${file.lastModified}`}
                     value={file}
                   >
+                    {/* previewContent is called directly, rather than mounted as a component. */}
                     <FileUploadItemPreview
                       previewContent={() =>
                         isReuploading ? <Loader2 className="animate-spin" /> : <FileIcon />

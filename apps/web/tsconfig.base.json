@@ -6,7 +6,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "declaration": false,
     "declarationMap": false
   }
 }

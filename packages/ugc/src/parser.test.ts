@@ -50,6 +50,7 @@ test("rejects an oversized unterminated header and cancels its stream", async ()
     { highWaterMark: 0 },
   );
 
+  // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
   await expect(parseUgc(stream)).rejects.toBeInstanceOf(UgcError);
   expect(canceled).toBe(true);
 });

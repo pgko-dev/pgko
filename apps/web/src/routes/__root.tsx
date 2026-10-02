@@ -9,7 +9,7 @@ import type { AuthState } from "@/hooks/auth.tsx";
 
 import { Site } from "../components/site.tsx";
 
-interface MyRouterContext {
+export interface MyRouterContext {
   queryClient: QueryClient;
   auth: AuthState;
 }

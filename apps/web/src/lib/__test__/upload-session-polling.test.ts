@@ -77,6 +77,7 @@ test("permanent errors stop immediately and repeated transient errors have a fin
       waits++;
     },
   };
+  // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
   await expect(pollUploadSession("session", undefined, dependencies)).rejects.toMatchObject({
     response: { status: 404 },
   });
@@ -88,6 +89,7 @@ test("permanent errors stop immediately and repeated transient errors have a fin
     reads++;
     throw httpError(503);
   };
+  // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
   await expect(pollUploadSession("session", undefined, dependencies)).rejects.toMatchObject({
     response: { status: 503 },
   });

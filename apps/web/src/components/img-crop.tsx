@@ -167,12 +167,10 @@ function useObjectUrl(file: File | null): string | undefined {
 
   useEffect(() => {
     if (!file) {
-      // oxlint-disable-next-line react/set-state-in-effect -- blob URL lifecycle
       setUrl(undefined);
       return;
     }
     const objectUrl = URL.createObjectURL(file);
-    // oxlint-disable-next-line react/set-state-in-effect -- blob URL lifecycle
     setUrl(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);

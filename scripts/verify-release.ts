@@ -37,6 +37,7 @@ async function isAvailable(name: string): Promise<boolean> {
   return Boolean(metadata.versions?.[version]);
 }
 
+// Poll rounds share pending state and must wait before contacting the registry again.
 while (pending.length && Date.now() < deadline) {
   const availability = await Promise.all(pending.map((name) => isAvailable(name)));
 

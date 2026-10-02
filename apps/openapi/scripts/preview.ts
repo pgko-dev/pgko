@@ -21,4 +21,6 @@ const server = Bun.serve({
     return new Response(Bun.file(resolve(output, filename)));
   },
 });
-console.log(`Preview: ${server.url}openapi/ (matches the GitHub Pages project path)`);
+console.log(
+  `Preview: ${new URL("openapi/", server.url).href} (matches the GitHub Pages project path)`,
+);

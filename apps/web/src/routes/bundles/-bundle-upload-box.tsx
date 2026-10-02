@@ -162,6 +162,7 @@ export function BundleUploadBox() {
         <FileUploadList>
           {files.map((file) => (
             <FileUploadItem key={`${file.name}-${file.size}-${file.lastModified}`} value={file}>
+              {/* previewContent is called directly, rather than mounted as a component. */}
               <FileUploadItemPreview
                 previewContent={() =>
                   isPending ? <Loader2 className="animate-spin" /> : <FileIcon />

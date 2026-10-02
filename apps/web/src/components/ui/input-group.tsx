@@ -45,6 +45,7 @@ function InputGroupAddon({
   align = "inline-start",
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
+  // Pointer focus convenience; keyboard users can tab directly to the input and nested buttons.
   return (
     <div
       data-slot="input-group-addon"

@@ -11,7 +11,6 @@ export async function ensureAuthenticated(
   context: {
     auth: AuthState;
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   location: ParsedLocation<any>,
 ): Promise<AuthUser> {
   const user = await context.auth.getUserOrRefresh();
