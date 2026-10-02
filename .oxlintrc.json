@@ -38,6 +38,7 @@
         "**/*.spec.{js,mjs,cjs,jsx,mjsx,ts,mts,tsx,mtsx}"
       ],
       "rules": {
+        "typescript/await-thenable": "off",
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-non-null-assertion": "off",
         "no-empty": "off",

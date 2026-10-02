@@ -3,6 +3,8 @@ import { CheckCircle, FileEdit, Settings, Users } from "lucide-react";
 import { useCallback, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { PublicUser } from "@pgko-dev/schema";
+
 import { BundleList } from "@/components/bundle";
 import { Site } from "@/components/site";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -44,6 +46,35 @@ const LIST_MODE_ICONS: Record<ListMode, ComponentType<{ className?: string }>> =
   draft: FileEdit,
 };
 
+function getProfilePageStatus({
+  isOwnProfile,
+  authLoading,
+  hasAuthUser,
+  effectiveId,
+  profileLoading,
+  hasProfileUser,
+  isError,
+}: {
+  isOwnProfile: boolean;
+  authLoading: boolean;
+  hasAuthUser: boolean;
+  effectiveId: string;
+  profileLoading: boolean;
+  hasProfileUser: boolean;
+  isError: boolean;
+}): "not-found" | "loading" | "ready" {
+  if (isOwnProfile) {
+    if (isError) return "not-found";
+    if (authLoading || !hasAuthUser) return "loading";
+    if (effectiveId && (profileLoading || !hasProfileUser)) return "loading";
+  } else {
+    if (!profileLoading && (isError || !hasProfileUser)) return "not-found";
+    if (profileLoading) return "loading";
+  }
+
+  return hasProfileUser ? "ready" : "loading";
+}
+
 function RouteComponent() {
   const { jointId } = Route.useParams();
   const { user, isLoading: authLoading } = useAuth();
@@ -57,31 +88,58 @@ function RouteComponent() {
   const { data: profileData, isLoading: profileLoading, isError } = useUserProfile(effectiveId);
 
   const profileUser = profileData?.user;
-  const userLoading = isOwnProfile && (authLoading || !user);
-  const profileStillLoading = !!effectiveId && (profileLoading || !profileUser);
-
-  const showNotFound =
-    (isOwnProfile && isError) || (!isOwnProfile && !profileLoading && (isError || !profileUser));
-  const showLoading =
-    (isOwnProfile && (userLoading || profileStillLoading)) ||
-    (!isOwnProfile && (profileLoading || !profileUser));
+  const profileStatus = getProfilePageStatus({
+    isOwnProfile,
+    authLoading,
+    hasAuthUser: !!user,
+    effectiveId,
+    profileLoading,
+    hasProfileUser: !!profileUser,
+    isError,
+  });
 
   const handleListModeChange = useCallback((v: string[]) => {
     const next = v[0];
     if (next) setOwnListMode(next as ListMode);
   }, []);
 
-  if (showNotFound) {
+  if (profileStatus === "not-found") {
     return <ProfileNotFound />;
   }
 
-  if (showLoading || !profileUser) {
+  if (profileStatus === "loading" || !profileUser) {
     return (
       <Site.Page documentTitle={t("ui.loading")}>
         <ProfileSkeleton />
       </Site.Page>
     );
   }
+
+  return (
+    <UserProfileContent
+      profileUser={profileUser}
+      currentUserId={user?.id}
+      isOwnProfile={isOwnProfile}
+      listMode={listMode}
+      onListModeChange={handleListModeChange}
+    />
+  );
+}
+
+function UserProfileContent({
+  profileUser,
+  currentUserId,
+  isOwnProfile,
+  listMode,
+  onListModeChange,
+}: Readonly<{
+  profileUser: PublicUser;
+  currentUserId?: string;
+  isOwnProfile: boolean;
+  listMode: ListMode;
+  onListModeChange: (value: string[]) => void;
+}>) {
+  const { t } = useTranslation();
 
   const profileTabLabel = profileUser.slug
     ? t("ui.profilePage.browserTabUser", { handle: profileUser.slug })
@@ -108,7 +166,7 @@ function RouteComponent() {
         <section className="w-full space-y-4">
           <BundleList
             userId={profileUser.id}
-            currentUserId={user?.id}
+            currentUserId={currentUserId}
             draftsOnly={listMode === "draft"}
             collaborationsOnly={isOwnProfile && listMode === "collab"}
             searchPlaceholder={t("ui.bundleList.searchPlaceholder")}
@@ -118,7 +176,7 @@ function RouteComponent() {
               isOwnProfile ? (
                 <ToggleGroup
                   value={[listMode]}
-                  onValueChange={handleListModeChange}
+                  onValueChange={onListModeChange}
                   variant="outline"
                   size="sm"
                   spacing={0}

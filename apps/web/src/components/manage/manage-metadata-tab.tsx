@@ -768,25 +768,105 @@ function BundleCoverSection() {
   );
 }
 
-export function ManageMetadataTab() {
+function ManageMetadataSongs() {
   const { t } = useTranslation();
-  const manage = useBundleManageContext();
   const {
     form,
     schemas,
-    data,
     songs,
-    failedProcessResults,
     handlePlayPreview,
     previewPlayingId,
     previewAudioRef,
     stopPreview,
-    isSaving,
-    isReleasing,
-    isDeleting,
-    isReleased,
-    isDefaultValue,
-  } = manage;
+  } = useBundleManageContext();
+
+  if (songs.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Music2 className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          {t("ui.bundlePage.songsSectionTitle", { count: songs.length })}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {songs.map((song) => (
+            <form.AppField
+              key={song.id}
+              name={`videoUrlBySongId.${song.id}`}
+              validators={{ onChange: schemas.videoUrl }}
+            >
+              {(field) => (
+                <SongPanel
+                  song={song}
+                  videoUrl={field.state.value}
+                  onVideoUrlChange={field.handleChange}
+                  onVideoUrlBlur={field.handleBlur}
+                  videoUrlInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+                  onPlayPreview={handlePlayPreview}
+                  isPreviewPlaying={previewPlayingId === song.id}
+                />
+              )}
+            </form.AppField>
+          ))}
+        </div>
+        <audio ref={previewAudioRef} onEnded={stopPreview} hidden>
+          <track kind="captions" />
+        </audio>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ManageMetadataActions() {
+  const { t } = useTranslation();
+  const { form, isSaving, isReleasing, isDeleting, isReleased, isDefaultValue, handleDiscard } =
+    useBundleManageContext();
+  const isSubmitting = isSaving || isReleasing;
+  const isBusy = isSubmitting || isDeleting;
+  const idleActionLabel = t(
+    isReleased ? "ui.uploadDetail.actions.save" : "ui.uploadDetail.actions.submit",
+  );
+  const busyActionLabel = t(
+    isReleased ? "ui.uploadDetail.actions.saving" : "ui.uploadDetail.actions.submitting",
+  );
+  const actionLabel = isSubmitting ? busyActionLabel : idleActionLabel;
+  const IdleSubmitIcon = isReleased ? Save : Upload;
+  const SubmitIcon = isSubmitting ? Spinner : IdleSubmitIcon;
+
+  return (
+    <div className="flex items-center justify-start gap-2">
+      <Button
+        type="submit"
+        form={form.formId}
+        disabled={isBusy || (isReleased && isDefaultValue)}
+        aria-label={actionLabel}
+      >
+        <SubmitIcon className="size-4" />
+        <span className="ml-2">{actionLabel}</span>
+      </Button>
+      {!isReleased && (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isBusy}
+          onClick={handleDiscard}
+          aria-label={t("ui.uploadDetail.actions.discard")}
+        >
+          <Trash2 className="size-4" />
+          <span className="ml-2">{t("ui.uploadDetail.actions.discard")}</span>
+        </Button>
+      )}
+    </div>
+  );
+}
+
+export function ManageMetadataTab() {
+  const { t } = useTranslation();
+  const { data, failedProcessResults, stopPreview, isReleased, bundleId } =
+    useBundleManageContext();
 
   useEffect(() => () => stopPreview(), [stopPreview]);
 
@@ -803,103 +883,11 @@ export function ManageMetadataTab() {
       />
 
       <FailedProcessResultsCard results={failedProcessResults} />
-
       <BundleCoverSection />
-
       <BundleMetadataSection />
-
-      {isReleased && <CollaboratorsCard bundleId={manage.bundleId} />}
-
-      {songs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Music2 className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-              {t("ui.bundlePage.songsSectionTitle", { count: songs.length })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {songs.map((song) => (
-                <form.AppField
-                  key={song.id}
-                  name={`videoUrlBySongId.${song.id}`}
-                  validators={{ onChange: schemas.videoUrl }}
-                >
-                  {(field) => (
-                    <SongPanel
-                      song={song}
-                      videoUrl={field.state.value}
-                      onVideoUrlChange={field.handleChange}
-                      onVideoUrlBlur={field.handleBlur}
-                      videoUrlInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
-                      onPlayPreview={handlePlayPreview}
-                      isPreviewPlaying={previewPlayingId === song.id}
-                    />
-                  )}
-                </form.AppField>
-              ))}
-            </div>
-            <audio ref={previewAudioRef} onEnded={stopPreview} hidden>
-              <track kind="captions" />
-            </audio>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex items-center justify-start gap-2">
-        {isReleased ? (
-          <Button
-            type="submit"
-            form={form.formId}
-            disabled={isSaving || isReleasing || isDeleting || isDefaultValue}
-            aria-label={
-              isSaving ? t("ui.uploadDetail.actions.saving") : t("ui.uploadDetail.actions.save")
-            }
-          >
-            {isSaving || isReleasing ? <Spinner className="size-4" /> : <Save className="size-4" />}
-            <span className="ml-2">
-              {isSaving || isReleasing
-                ? t("ui.uploadDetail.actions.saving")
-                : t("ui.uploadDetail.actions.save")}
-            </span>
-          </Button>
-        ) : (
-          <>
-            <Button
-              type="submit"
-              form={form.formId}
-              disabled={isSaving || isReleasing || isDeleting}
-              aria-label={
-                isSaving || isReleasing
-                  ? t("ui.uploadDetail.actions.submitting")
-                  : t("ui.uploadDetail.actions.submit")
-              }
-            >
-              {isSaving || isReleasing ? (
-                <Spinner className="size-4" />
-              ) : (
-                <Upload className="size-4" />
-              )}
-              <span className="ml-2">
-                {isSaving || isReleasing
-                  ? t("ui.uploadDetail.actions.submitting")
-                  : t("ui.uploadDetail.actions.submit")}
-              </span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSaving || isReleasing || isDeleting}
-              onClick={manage.handleDiscard}
-              aria-label={t("ui.uploadDetail.actions.discard")}
-            >
-              <Trash2 className="size-4" />
-              <span className="ml-2">{t("ui.uploadDetail.actions.discard")}</span>
-            </Button>
-          </>
-        )}
-      </div>
+      {isReleased && <CollaboratorsCard bundleId={bundleId} />}
+      <ManageMetadataSongs />
+      <ManageMetadataActions />
     </div>
   );
 }

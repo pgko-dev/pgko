@@ -27,12 +27,19 @@ export function ErrorComponent({ error, reset }: Readonly<ErrorComponentProps>) 
 
   return (
     <StatusPage title={t("ui.errorPage.title")} description={t("ui.errorPage.description")}>
-      <Button variant="secondary" size="icon" nativeButton={false} render={<Link to="/" />}>
+      <Button
+        variant="secondary"
+        size="icon"
+        nativeButton={false}
+        render={<Link to="/" />}
+        aria-label={t("ui.nav.browse")}
+      >
         <Undo2 />
       </Button>
       <Button
         variant="secondary"
         size="icon"
+        aria-label={t("ui.errorPage.retry")}
         onClick={() => {
           if (isStaleChunk) {
             window.location.reload();

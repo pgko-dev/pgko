@@ -355,6 +355,7 @@ export const ui = {
     languageChangeFailed: "言語を切り替えられませんでした。もう一度お試しください",
   },
   errorPage: {
+    retry: "再試行",
     title: "問題が発生しました",
     description: "予期しないエラーが発生しました",
   },

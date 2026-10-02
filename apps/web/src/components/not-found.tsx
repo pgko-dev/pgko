@@ -10,7 +10,13 @@ export function NotFound() {
 
   return (
     <StatusPage title={t("ui.notFoundPage.title")} description={t("ui.notFoundPage.description")}>
-      <Button variant="secondary" size="icon" nativeButton={false} render={<Link to="/" />}>
+      <Button
+        variant="secondary"
+        size="icon"
+        nativeButton={false}
+        render={<Link to="/" />}
+        aria-label={t("ui.nav.browse")}
+      >
         <Undo2 />
       </Button>
     </StatusPage>
