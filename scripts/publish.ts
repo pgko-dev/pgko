@@ -19,6 +19,7 @@ if (initial && !process.env.CI) {
   throw new Error(`Publish only from tag v${version}`);
 }
 
+// Publish in dependency order and stop at the first failed registry or integrity check.
 for (const name of packageNames) {
   const tarball = join(root, "artifacts", `pgko-dev-${name}-${version}.tgz`);
 

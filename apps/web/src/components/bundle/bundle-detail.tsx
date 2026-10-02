@@ -372,7 +372,7 @@ function BundleDetailSongs({
         </>
       }
       footer={
-        <audio ref={audioRef} onEnded={onEnded} className="hidden" aria-hidden>
+        <audio ref={audioRef} onEnded={onEnded} hidden>
           <track kind="captions" />
         </audio>
       }

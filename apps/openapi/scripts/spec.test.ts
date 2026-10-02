@@ -45,6 +45,7 @@ test("validates 3.1 schemas without rewriting references or source", async () =>
 
 test("rejects an invalid OpenAPI document", async () => {
   const path = await fixture({ ...document, info: { title: "Missing version" } });
+  // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
   await expect(readSpec(path)).rejects.toThrow();
 });
 
@@ -53,6 +54,7 @@ test("rejects unresolved local references", async () => {
     ...document,
     components: { schemas: { Profile: { $ref: "#/components/schemas/Missing" } } },
   });
+  // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
   await expect(readSpec(path)).rejects.toThrow();
 });
 
@@ -63,6 +65,7 @@ test.each(["https://example.invalid/private.json", "../private.json"])(
       ...document,
       components: { schemas: { Profile: { $ref: reference } } },
     });
+    // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
     await expect(readSpec(path)).rejects.toThrow("The spec must be self-contained");
   },
 );

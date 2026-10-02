@@ -122,6 +122,7 @@ describe("API CSRF recovery", () => {
     });
     installCsrfInterceptors(client);
 
+    // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
     await expect(client.post("/api/example")).rejects.toThrow("Forbidden");
     expect(mutations).toBe(2);
   });
@@ -148,6 +149,7 @@ describe("API CSRF recovery", () => {
       });
       installCsrfInterceptors(client);
 
+      // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
       await expect(client.post("/api/example")).rejects.toThrow("Rejected");
       expect(mutations).toBe(1);
     });
@@ -235,6 +237,7 @@ describe("API CSRF recovery", () => {
       });
       installCsrfInterceptors(client);
 
+      // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
       await expect(client.post("/api/example")).rejects.toThrow("Original CSRF rejection");
       expect(reads).toBe(2);
       expect(mutations).toBe(1);

@@ -59,6 +59,7 @@ function abortError() {
 
 function waitWithJitter(attempt: number, signal?: AbortSignal) {
   const base = Math.min(8000, 400 * 2 ** attempt);
+  // Jitter spreads retries; this random value is not used for credentials or identifiers.
   const delay = Math.round(base * (0.75 + Math.random() * 0.5));
   return new Promise<void>((resolve, reject) => {
     if (signal?.aborted) {
@@ -134,6 +135,7 @@ async function uploadPartWithRetry(
   signal: AbortSignal | undefined,
   onProgress: (loaded: number) => void,
 ) {
+  // Each retry must wait for the previous request and its backoff before sending again.
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       return await uploadPartRequest(url, part, signal, onProgress);
@@ -158,7 +160,7 @@ async function uploadAllParts(
   signal: AbortSignal | undefined,
   onProgress?: (progress: number) => void,
 ) {
-  const loadedByPart = new Array<number>(parts.length).fill(0);
+  const loadedByPart = Array.from({ length: parts.length }, () => 0);
   let nextPartIndex = 0;
   let displayedProgress = 0;
   const completed: { partNumber: number; etag: string }[] = [];
@@ -171,6 +173,7 @@ async function uploadAllParts(
   };
 
   const worker = async () => {
+    // Sequential requests within each worker keep total concurrent transfers bounded.
     while (nextPartIndex < parts.length) {
       const partIndex = nextPartIndex++;
       const partInfo = parts[partIndex]!;

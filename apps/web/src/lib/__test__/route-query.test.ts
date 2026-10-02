@@ -34,12 +34,14 @@ describe("route query caching", () => {
     const queryFn = mock(async () => ({ title: "fetched" }));
 
     try {
+      // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
       await expect(
         queryClient.query({ queryKey: ["bundle", "new"], queryFn, staleTime: "static" }),
       ).resolves.toEqual({ title: "fetched" });
       expect(queryFn).toHaveBeenCalledTimes(1);
 
       const error = new Error("bundle not found");
+      // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
       await expect(
         queryClient.query({
           queryKey: ["bundle", "missing"],

@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { packageNames, root, run } from "./packages";
 
+// Packages are listed in dependency order; consumers need their dependencies' dist first.
 for (const name of packageNames) {
   if (name === "tsconfig") {
     continue;

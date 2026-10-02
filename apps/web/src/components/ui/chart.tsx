@@ -140,7 +140,7 @@ function ChartTooltipContent({
 
   const nestLabel = payload.length === 1 && indicator !== "dot";
   const tooltipItem = payload[0];
-  const tooltipItemKey = `${labelKey ?? tooltipItem?.dataKey ?? tooltipItem?.name ?? "value"}`;
+  const tooltipItemKey = String(labelKey ?? tooltipItem?.dataKey ?? tooltipItem?.name ?? "value");
   const tooltipItemConfig = getPayloadConfigFromPayload(config, tooltipItem, tooltipItemKey);
   const tooltipValue =
     !labelKey && typeof label === "string"
@@ -172,7 +172,7 @@ function ChartTooltipContent({
             return null;
           }
 
-          const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
+          const key = String(nameKey ?? item.name ?? item.dataKey ?? "value");
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
           const indicatorColor = color ?? item.payload?.fill ?? item.color;
 
@@ -274,7 +274,7 @@ function ChartLegendContent({
           return null;
         }
 
-        const key = `${nameKey ?? item.dataKey ?? "value"}`;
+        const key = String(nameKey ?? item.dataKey ?? "value");
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
         return (

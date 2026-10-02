@@ -41,6 +41,7 @@ const types: string[] = [];
 let version: string | undefined;
 
 try {
+  // Inspect one artifact at a time to retain package order in the consumer's smoke tests.
   for (const name of packageNames) {
     const source = join(root, "packages", name);
     const sourcePkg = await Bun.file(join(source, "package.json")).json();
@@ -125,6 +126,7 @@ try {
   await run(["bun", "smoke.mjs"], consumer);
   await Bun.write(join(consumer, "smoke.ts"), types.join("\n"));
 
+  // Both checks reuse the same tsconfig path, so writes and compiler runs must not overlap.
   for (const environment of consumerEnvironments) {
     const compilerConfig = {
       extends: "@pgko-dev/tsconfig/base.json",

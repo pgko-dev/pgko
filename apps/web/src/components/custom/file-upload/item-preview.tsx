@@ -85,14 +85,12 @@ function FileUploadItemPreview(props: Readonly<FileUploadItemPreviewProps>) {
 
   React.useEffect(() => {
     if (!file?.type.startsWith("image/")) {
-      // oxlint-disable-next-line react/set-state-in-effect -- blob URL lifecycle
       setImageUrl(null);
       return;
     }
 
     const url = URL.createObjectURL(file);
     context.urlCache.set(file, url);
-    // oxlint-disable-next-line react/set-state-in-effect -- blob URL lifecycle
     setImageUrl(url);
 
     return () => {
