@@ -44,7 +44,6 @@ describe("multipart bundle upload", () => {
       new Error("network unavailable"),
     );
     try {
-      // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
       await expect(
         uploadMultipartBundle({
           file: new File(["archive"], "bundle.zip"),
@@ -63,7 +62,6 @@ describe("multipart bundle upload", () => {
   it("does not create a session when the upload is already canceled", async () => {
     const post = spyOn(apiClient, "post").mockRejectedValue(new Error("unexpected request"));
     try {
-      // oxlint-disable-next-line typescript/await-thenable -- Bun async matchers return promises despite their void types.
       await expect(
         uploadMultipartBundle({
           file: new File(["archive"], "bundle.zip"),

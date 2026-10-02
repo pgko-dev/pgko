@@ -38,6 +38,8 @@
         "**/*.spec.{js,mjs,cjs,jsx,mjsx,ts,mts,tsx,mtsx}"
       ],
       "rules": {
+        // Bun's async matchers return promises despite their void types.
+        "typescript/await-thenable": "off",
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-non-null-assertion": "off",
         "no-empty": "off",
