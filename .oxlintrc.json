@@ -1,0 +1,46 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/.tanstack/**",
+    "**/data/**",
+    "**/bun.lock",
+    "**/*.gen.ts",
+    "**/vendor/**",
+    "**/build/**",
+    "**/worker-configuration.d.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["apps/web/src/**/*.{js,mjs,cjs,jsx,mjsx,ts,mts,tsx,mtsx}"],
+      "rules": {
+        "react/no-children-prop": "off",
+        "@tanstack/query/exhaustive-deps": "error",
+        "@tanstack/query/no-rest-destructuring": "warn",
+        "@tanstack/query/stable-query-client": "error",
+        "@tanstack/query/no-unstable-deps": "error",
+        "@tanstack/query/infinite-query-property-order": "error",
+        "@tanstack/query/no-void-query-fn": "error",
+        "@tanstack/query/mutation-property-order": "error",
+        "@tanstack/router/create-route-property-order": "warn",
+        "@tanstack/router/route-param-names": "error"
+      },
+      "plugins": ["react"],
+      "jsPlugins": ["@tanstack/eslint-plugin-query", "@tanstack/eslint-plugin-router"]
+    },
+    {
+      "files": [
+        "**/*.test.{js,mjs,cjs,jsx,mjsx,ts,mts,tsx,mtsx}",
+        "**/*.spec.{js,mjs,cjs,jsx,mjsx,ts,mts,tsx,mtsx}"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "no-empty": "off",
+        "prefer-template": "off"
+      }
+    }
+  ]
+}

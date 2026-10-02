@@ -1,0 +1,45 @@
+{
+  "name": "@pgko-dev/common",
+  "version": "0.1.4",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pgko-dev/pgko.git",
+    "directory": "packages/common"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./songs": {
+      "types": "./dist/songs.d.ts",
+      "import": "./dist/songs.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "clean": "bunx rimraf dist node_modules",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@pgko-dev/config": "workspace:*",
+    "@pgko-dev/schema": "workspace:*",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "@pgko-dev/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@pgko-dev/worker",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "tail": "wrangler tail",
+    "tsc": "tsc --noEmit",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov",
+    "lint": "oxlint .",
+    "fmt": "oxfmt --check .",
+    "fmt:w": "oxfmt .",
+    "check": "bun run lint && bun run fmt && bun run tsc && bun run test && bun run build",
+    "check:coverage": "bun run lint && bun run fmt && bun run tsc && bun run test:coverage && bun run build"
+  },
+  "devDependencies": {
+    "@pgko-dev/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

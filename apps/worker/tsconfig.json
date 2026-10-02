@@ -1,0 +1,12 @@
+{
+  "extends": "@pgko-dev/tsconfig/base.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "types": [],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["worker-configuration.d.ts", "src"],
+  "exclude": ["node_modules", "test"]
+}

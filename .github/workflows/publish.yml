@@ -1,0 +1,45 @@
+name: Publish packages
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      skip_checks:
+        description: "Bypass verification checks"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'pgko-dev/pgko' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm install --global --ignore-scripts npm@11.19.0
+      - run: bun ci --ignore-scripts
+      - name: Check packages
+        if: github.event_name != 'workflow_dispatch' || !inputs.skip_checks
+        run: bun run check:packages && bun run lint && bun run fmt
+      - name: Build packages when checks are bypassed
+        if: github.event_name == 'workflow_dispatch' && inputs.skip_checks
+        run: bun run build:packages
+      - name: Prepare release artifacts
+        run: bun scripts/check-release.ts && bun run pack:check
+      - run: bun scripts/publish.ts
+      - run: bun scripts/verify-release.ts

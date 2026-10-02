@@ -1,0 +1,60 @@
+import type { ApiTranslation } from "../en/api.js";
+
+export const api = {
+  error: {
+    invalidCursor: "分页游标无效，请从第一页重新开始。",
+    tooManyRequests: "请求过于频繁，请稍后再试",
+    unknown: "出了点问题，请稍后再试",
+    invalidResponse: "服务器返回了无效响应，请刷新页面",
+    bundleNotFound: "未找到该曲包，或你没有访问权限",
+    noBeatmapAvailable: "目前没有可用的谱面…",
+    auth: {
+      csrfInvalid: "无法验证请求来源，请刷新页面后重试",
+      unauthorized: "请先登录后再继续",
+      invalidCredentials: "邮箱或密码错误",
+      emailAlreadyInUse: "该邮箱已被注册",
+      slugAlreadyInUse: "该用户名已被占用，请换一个",
+      emailSendFailed: "邮件发送失败，请稍后再试",
+      registration: {},
+      resetPassword: {
+        invalidOrExpiredOtp: "密码重置验证码无效或已过期",
+      },
+    },
+    user: {
+      notFound: "未找到对应账户",
+      updateFailed: "账户更新失败，请重试",
+      invalidSlug: "用户名格式无效",
+      noFieldsToUpdate: "没有可更新的内容",
+    },
+    upload: {
+      error: {
+        typeNotAccepted: "不支持该文件类型，请上传 ZIP 文件",
+        noValidUgcFiles: "ZIP 中未找到有效的 UGC 谱面",
+        processingFailed: "上传处理失败，请稍后再试",
+        noValidSongs: "未能成功处理任何 UGC 谱面",
+        uploadFailed: "曲包上传失败，请重试",
+        uploadCanceled: "上传已取消",
+        missingBundleKey: "缺少曲包数据，请重新上传",
+        jobCreationFailed: "无法开始上传任务，请重试",
+      },
+      convert: {
+        processingFailed: "文件处理失败",
+        fileNotFound: "未找到该文件",
+        beatmapFailed: "谱面处理失败",
+      },
+    },
+    forbidden: "你没有权限执行此操作",
+    resourceExpired: "该资源已过期，无法访问",
+    collaboration: {
+      cannotInviteSelf: "不能邀请自己为合作成员",
+      alreadyCollaborator: "该用户已是本曲包的合作成员",
+      pendingRequestExists: "已向该用户发送过合作邀请",
+      requestNotFound: "未找到该合作请求",
+      tooManyCollaborators: "该曲包的合作成员数已达上限",
+      cannotCancelDeclined: "无法取消已被拒绝的请求",
+      onlyDeclinedCanBeDismissed: "只能移除已拒绝的请求",
+      notAccepted: "此合作尚未被接受",
+      inviteFailed: "合作邀请发送失败，请重试",
+    },
+  },
+} satisfies ApiTranslation;

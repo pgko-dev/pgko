@@ -1,0 +1,9 @@
+{
+  "extends": "@pgko-dev/tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}
