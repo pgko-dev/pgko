@@ -1,6 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript"],
+  "options": {
+    "typeAware": true
+  },
   "ignorePatterns": [
     "**/dist/**",
     "**/node_modules/**",
@@ -27,7 +29,7 @@
         "@tanstack/router/create-route-property-order": "warn",
         "@tanstack/router/route-param-names": "error"
       },
-      "plugins": ["react"],
+      "plugins": ["eslint", "typescript", "unicorn", "oxc", "react"],
       "jsPlugins": ["@tanstack/eslint-plugin-query", "@tanstack/eslint-plugin-router"]
     },
     {
