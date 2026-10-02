@@ -356,6 +356,7 @@ export const ui = {
     languageChangeFailed: "언어를 변경하지 못했습니다. 다시 시도해 주세요.",
   },
   errorPage: {
+    retry: "다시 시도",
     title: "문제가 발생했습니다",
     description: "예기치 않은 오류가 발생했습니다.",
   },

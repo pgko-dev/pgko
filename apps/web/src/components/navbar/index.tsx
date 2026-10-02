@@ -237,6 +237,7 @@ export const Navbar = ({ className, ...props }: Readonly<React.HTMLAttributes<HT
       <div
         ref={measureRef}
         aria-hidden="true"
+        inert
         className="pointer-events-none absolute -left-[9999px] flex h-16 items-center gap-4 opacity-0"
       >
         <div data-measure="logo">
@@ -261,7 +262,13 @@ export const Navbar = ({ className, ...props }: Readonly<React.HTMLAttributes<HT
             </Button>
           </span>
           <span data-measure="random-icon">
-            <Button type="button" variant="ghost" size="icon-lg" tabIndex={-1}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              tabIndex={-1}
+              aria-label={t("ui.nav.randomBeatmap")}
+            >
               <Dice3 aria-hidden="true" />
             </Button>
           </span>
@@ -285,6 +292,7 @@ export const Navbar = ({ className, ...props }: Readonly<React.HTMLAttributes<HT
               variant="ghost"
               size="icon-lg"
               tabIndex={-1}
+              aria-label={t("ui.nav.userMenu")}
               className="rounded-full"
             >
               <span className="size-8" />

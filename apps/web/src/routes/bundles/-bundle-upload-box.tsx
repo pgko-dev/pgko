@@ -1,25 +1,10 @@
 import { useBlocker, useLocation, useNavigate } from "@tanstack/react-router";
-import { FileIcon, Loader2, Upload } from "lucide-react";
 import * as React from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { BundleRules } from "@pgko-dev/config";
-
-import {
-  FileUpload,
-  FileUploadDropzone,
-  FileUploadItem,
-  FileUploadItemMetadata,
-  FileUploadItemPreview,
-  FileUploadItemProgress,
-  FileUploadList,
-  FileUploadTrigger,
-} from "@/components/custom/file-upload";
-import { Button } from "@/components/ui/button";
+import { BundleArchiveUpload } from "@/components/bundle/bundle-archive-upload";
 import { useUploadBundle } from "@/hooks/mutation/use-upload-bundle";
 import { setBundleReturnTo } from "@/lib/bundle-return";
-import { formatBytes } from "@/lib/format-bytes";
 import type { MultipartUploadPhase } from "@/lib/multipart-bundle-upload";
 import { validateBundleFile } from "@/lib/validate-bundle-upload";
 
@@ -27,7 +12,6 @@ import { NavigationConfirmDialog } from "./-navigation-confirm-dialog";
 
 export function BundleUploadBox() {
   const [files, setFiles] = React.useState<File[]>([]);
-  const { t } = useTranslation();
   const { mutateAsync, isPending } = useUploadBundle();
   const location = useLocation();
   const navigate = useNavigate();
@@ -122,58 +106,13 @@ export function BundleUploadBox() {
 
   return (
     <>
-      <FileUpload
-        disabled={isPending}
-        value={files}
+      <BundleArchiveUpload
+        files={files}
+        isUploading={isPending}
         onValueChange={setFiles}
         onFileReject={onFileReject}
-        maxSize={BundleRules.file.maxFileBytes}
-        accept={BundleRules.file.accept.join(",")}
-        maxFiles={1}
-        multiple={false}
-        className="w-full"
-        clearOnChange={true}
         onUpload={onUpload}
-      >
-        <FileUploadDropzone className="gap-0">
-          <div className="flex flex-col items-center">
-            <div className="mb-1 flex items-center justify-center rounded-full border p-2.5">
-              <Upload className="size-6 text-muted-foreground" />
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <p className="text-sm font-medium">
-                {t("ui.fileUpload.hint.dropHint", { extensions: "ZIP" })}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t("ui.fileUpload.hint.condition", {
-                  size: formatBytes(BundleRules.file.maxFileBytes),
-                })}
-              </p>
-            </div>
-            <FileUploadTrigger
-              render={
-                <Button variant="outline" size="sm" className="mt-2 w-fit">
-                  {t("ui.fileUpload.hint.browseFiles")}
-                </Button>
-              }
-            />
-          </div>
-        </FileUploadDropzone>
-        <FileUploadList>
-          {files.map((file) => (
-            <FileUploadItem key={`${file.name}-${file.size}-${file.lastModified}`} value={file}>
-              {/* previewContent is called directly, rather than mounted as a component. */}
-              <FileUploadItemPreview
-                previewContent={() =>
-                  isPending ? <Loader2 className="animate-spin" /> : <FileIcon />
-                }
-              />
-              <FileUploadItemMetadata />
-              <FileUploadItemProgress />
-            </FileUploadItem>
-          ))}
-        </FileUploadList>
-      </FileUpload>
+      />
 
       <NavigationConfirmDialog
         open={navigationStatus === "blocked"}

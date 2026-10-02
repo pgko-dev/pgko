@@ -713,6 +713,58 @@ function useBundleCardPopover(
   };
 }
 
+function BundleCardSongPopover({
+  hasSongs,
+  showHoverPopover,
+  popoverHeight,
+  popoverRef,
+  songListProps,
+}: Readonly<{
+  hasSongs: boolean;
+  showHoverPopover: boolean;
+  popoverHeight: number;
+  popoverRef: React.RefObject<HTMLDivElement | null>;
+  songListProps: React.ComponentProps<typeof SongListWithScroll>;
+}>) {
+  const popoverTransition = useMemo(
+    () => ({
+      type: "tween" as const,
+      duration: POPOVER_ANIMATION_DURATION,
+      ease: "easeOut" as const,
+    }),
+    [],
+  );
+
+  if (!hasSongs) return null;
+
+  return (
+    <m.div
+      aria-hidden={!showHoverPopover}
+      inert={showHoverPopover ? undefined : true}
+      className={cn(
+        "pointer-events-none absolute top-full -right-0.5 -left-0.5 z-30 origin-top overflow-hidden rounded-b-xl",
+        "border-x-2 border-t border-b-2 border-foreground/8 border-t-foreground/5 text-card-foreground backdrop-blur-xl",
+        "group-hover/bundle:border-x-foreground/15 group-hover/bundle:border-b-foreground/15 dark:border-x-foreground/10 dark:border-b-foreground/10 dark:group-hover/bundle:border-x-foreground/20 dark:group-hover/bundle:border-b-foreground/20",
+        showHoverPopover && "pointer-events-auto",
+      )}
+      style={{ height: popoverHeight, background: GLASS_BG }}
+      initial={false}
+      animate={{
+        clipPath: showHoverPopover ? "inset(0 0 0% 0)" : "inset(0 0 100% 0)",
+        opacity: showHoverPopover ? 1 : 0,
+      }}
+      transition={popoverTransition}
+    >
+      <div ref={popoverRef} className="min-h-0 p-1">
+        <SongListWithScroll
+          {...songListProps}
+          maxHeight={POPOVER_ROW_HEIGHT * POPOVER_VISIBLE_ROWS}
+        />
+      </div>
+    </m.div>
+  );
+}
+
 // ─── BundleCard──────
 
 export const BundleCard = memo(
@@ -843,15 +895,6 @@ export const BundleCard = memo(
       [bundle, displayDate, noLinkUserId, dateSort, showDownloadCount, isOwner, sortedSongs],
     );
 
-    const popoverTransition = useMemo(
-      () => ({
-        type: "tween" as const,
-        duration: POPOVER_ANIMATION_DURATION,
-        ease: "easeOut" as const,
-      }),
-      [],
-    );
-
     return (
       <LazyMotion features={domAnimation} strict>
         <m.div
@@ -940,32 +983,13 @@ export const BundleCard = memo(
                 )}
               </div>
 
-              {hasSongs && (
-                <m.div
-                  aria-hidden={!showHoverPopover}
-                  inert={showHoverPopover ? undefined : true}
-                  className={cn(
-                    "pointer-events-none absolute top-full -right-0.5 -left-0.5 z-30 origin-top overflow-hidden rounded-b-xl",
-                    "border-x-2 border-t border-b-2 border-foreground/8 border-t-foreground/5 text-card-foreground backdrop-blur-xl",
-                    "group-hover/bundle:border-x-foreground/15 group-hover/bundle:border-b-foreground/15 dark:border-x-foreground/10 dark:border-b-foreground/10 dark:group-hover/bundle:border-x-foreground/20 dark:group-hover/bundle:border-b-foreground/20",
-                    showHoverPopover && "pointer-events-auto",
-                  )}
-                  style={{ height: popoverHeight, background: GLASS_BG }}
-                  initial={false}
-                  animate={{
-                    clipPath: showHoverPopover ? "inset(0 0 0% 0)" : "inset(0 0 100% 0)",
-                    opacity: showHoverPopover ? 1 : 0,
-                  }}
-                  transition={popoverTransition}
-                >
-                  <div ref={popoverRef} className="min-h-0 p-1">
-                    <SongListWithScroll
-                      {...sharedSongListProps}
-                      maxHeight={POPOVER_ROW_HEIGHT * POPOVER_VISIBLE_ROWS}
-                    />
-                  </div>
-                </m.div>
-              )}
+              <BundleCardSongPopover
+                hasSongs={hasSongs}
+                showHoverPopover={showHoverPopover}
+                popoverHeight={popoverHeight}
+                popoverRef={popoverRef}
+                songListProps={sharedSongListProps}
+              />
             </div>
           )}
           {isMobile && (

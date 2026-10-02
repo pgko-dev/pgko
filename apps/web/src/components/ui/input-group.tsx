@@ -47,6 +47,7 @@ function InputGroupAddon({
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
   // Pointer focus convenience; keyboard users can tab directly to the input and nested buttons.
   return (
+    // react-doctor-disable-next-line react-doctor/no-static-element-interactions -- Focus assistance preserves the input's keyboard interaction and nested buttons.
     <div
       data-slot="input-group-addon"
       data-align={align}

@@ -353,6 +353,7 @@ export const ui = {
     languageChangeFailed: "切換語言失敗，請再試一次",
   },
   errorPage: {
+    retry: "重試",
     title: "出了點問題",
     description: "發生了預期之外的錯誤",
   },
