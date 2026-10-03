@@ -1,6 +1,9 @@
 import type { Widen } from "../utils.js";
 
+import { preview } from "./preview.js";
+
 export const ui = {
+  preview,
   homePage: {
     title: "Beatmaps",
     description: "Explore UMIGURI beatmaps shared by the community.",

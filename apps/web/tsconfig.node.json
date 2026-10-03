@@ -6,6 +6,6 @@
     "lib": ["ES2023"],
     "types": ["bun"]
   },
-  "include": ["vite.config.ts"],
+  "include": ["vite.config.ts", "playwright.config.ts"],
   "extends": "./tsconfig.base.json"
 }

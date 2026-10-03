@@ -1,6 +1,9 @@
 import type { UiTranslation } from "../en/ui.js";
 
+import { preview } from "./preview.js";
+
 export const ui = {
+  preview,
   homePage: {
     title: "谱面",
     description: "探索社区分享的 UMIGURI 谱面",

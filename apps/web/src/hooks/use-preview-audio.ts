@@ -31,6 +31,7 @@ export function usePreviewAudio() {
 
   const stopPreview = useCallback(() => {
     playRequestRef.current += 1;
+    audioRef.current?.pause();
     setPlayingId(null);
   }, []);
 

@@ -1,6 +1,9 @@
 import type { UiTranslation } from "../en/ui.js";
 
+import { preview } from "./preview.js";
+
 export const ui = {
+  preview,
   homePage: {
     title: "비트맵",
     description: "커뮤니티가 공유한 UMIGURI 비트맵을 둘러보세요",
