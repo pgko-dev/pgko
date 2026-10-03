@@ -4684,58 +4684,6 @@
                                           "resolvedPath",
                                           "exists"
                                         ]
-                                      },
-                                      "fldImg": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "bgImg": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
                                       }
                                     },
                                     "required": []
@@ -6060,58 +6008,6 @@
                                               "resolvedPath",
                                               "exists"
                                             ]
-                                          },
-                                          "fldImg": {
-                                            "type": "object",
-                                            "properties": {
-                                              "filePath": {
-                                                "type": "string"
-                                              },
-                                              "resolvedPath": {
-                                                "anyOf": [
-                                                  {
-                                                    "type": "string"
-                                                  },
-                                                  {
-                                                    "type": "null"
-                                                  }
-                                                ]
-                                              },
-                                              "exists": {
-                                                "type": "boolean"
-                                              }
-                                            },
-                                            "required": [
-                                              "filePath",
-                                              "resolvedPath",
-                                              "exists"
-                                            ]
-                                          },
-                                          "bgImg": {
-                                            "type": "object",
-                                            "properties": {
-                                              "filePath": {
-                                                "type": "string"
-                                              },
-                                              "resolvedPath": {
-                                                "anyOf": [
-                                                  {
-                                                    "type": "string"
-                                                  },
-                                                  {
-                                                    "type": "null"
-                                                  }
-                                                ]
-                                              },
-                                              "exists": {
-                                                "type": "boolean"
-                                              }
-                                            },
-                                            "required": [
-                                              "filePath",
-                                              "resolvedPath",
-                                              "exists"
-                                            ]
                                           }
                                         },
                                         "required": []
@@ -7071,58 +6967,6 @@
                                               "resolvedPath",
                                               "exists"
                                             ]
-                                          },
-                                          "fldImg": {
-                                            "type": "object",
-                                            "properties": {
-                                              "filePath": {
-                                                "type": "string"
-                                              },
-                                              "resolvedPath": {
-                                                "anyOf": [
-                                                  {
-                                                    "type": "string"
-                                                  },
-                                                  {
-                                                    "type": "null"
-                                                  }
-                                                ]
-                                              },
-                                              "exists": {
-                                                "type": "boolean"
-                                              }
-                                            },
-                                            "required": [
-                                              "filePath",
-                                              "resolvedPath",
-                                              "exists"
-                                            ]
-                                          },
-                                          "bgImg": {
-                                            "type": "object",
-                                            "properties": {
-                                              "filePath": {
-                                                "type": "string"
-                                              },
-                                              "resolvedPath": {
-                                                "anyOf": [
-                                                  {
-                                                    "type": "string"
-                                                  },
-                                                  {
-                                                    "type": "null"
-                                                  }
-                                                ]
-                                              },
-                                              "exists": {
-                                                "type": "boolean"
-                                              }
-                                            },
-                                            "required": [
-                                              "filePath",
-                                              "resolvedPath",
-                                              "exists"
-                                            ]
                                           }
                                         },
                                         "required": []
@@ -7950,58 +7794,6 @@
                                         ]
                                       },
                                       "jacket": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "fldImg": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "bgImg": {
                                         "type": "object",
                                         "properties": {
                                           "filePath": {
@@ -9207,58 +8999,6 @@
                                         ]
                                       },
                                       "jacket": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "fldImg": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "bgImg": {
                                         "type": "object",
                                         "properties": {
                                           "filePath": {
@@ -10546,58 +10286,6 @@
                                           "resolvedPath",
                                           "exists"
                                         ]
-                                      },
-                                      "fldImg": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "bgImg": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
                                       }
                                     },
                                     "required": []
@@ -11294,58 +10982,6 @@
                                         ]
                                       },
                                       "jacket": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "fldImg": {
-                                        "type": "object",
-                                        "properties": {
-                                          "filePath": {
-                                            "type": "string"
-                                          },
-                                          "resolvedPath": {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "null"
-                                              }
-                                            ]
-                                          },
-                                          "exists": {
-                                            "type": "boolean"
-                                          }
-                                        },
-                                        "required": [
-                                          "filePath",
-                                          "resolvedPath",
-                                          "exists"
-                                        ]
-                                      },
-                                      "bgImg": {
                                         "type": "object",
                                         "properties": {
                                           "filePath": {
