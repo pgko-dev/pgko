@@ -2,6 +2,8 @@
 
 import { describe, expect, it, spyOn } from "bun:test";
 
+import { AxiosError } from "axios";
+
 import { apiClient } from "../api";
 import {
   calculateMultipartProgress,
@@ -33,6 +35,7 @@ describe("multipart bundle upload", () => {
       .mockResolvedValueOnce({
         data: {
           sessionId,
+          status: "uploading",
           expiresAt: new Date(),
           partSize: 1024,
           parts: [{ partNumber: 1, url: "https://storage.example.test/part" }],
@@ -57,6 +60,31 @@ describe("multipart bundle upload", () => {
       cancel.mockRestore();
       post.mockRestore();
       globalThis.XMLHttpRequest = originalXhr;
+    }
+  });
+  it("retries a lost creation response with the same key and resumes an accepted job", async () => {
+    const sessionId = "019da941-2c3f-7000-a73d-2f24ed4fb06d";
+    const post = spyOn(apiClient, "post")
+      .mockRejectedValueOnce(new AxiosError("Lost response", "ERR_NETWORK"))
+      .mockResolvedValueOnce({
+        data: { sessionId, status: "queued", expiresAt: new Date(), partSize: 1024, parts: [] },
+      });
+    const poll = spyOn(polling, "pollUploadSession").mockRejectedValue(new Error("stop polling"));
+    const cancel = spyOn(apiClient, "delete").mockResolvedValue({});
+    try {
+      await expect(
+        uploadMultipartBundle({ file: new File(["archive"], "bundle.zip"), kind: "upload" }),
+      ).rejects.toThrow("stop polling");
+      expect(post).toHaveBeenCalledTimes(2);
+      const keys = post.mock.calls.map((call) => call[2]?.headers?.["Idempotency-Key"]);
+      expect(keys[0]).toEqual(expect.any(String));
+      expect(keys[1]).toBe(keys[0]);
+      expect(poll).toHaveBeenCalledWith(sessionId, undefined);
+      expect(cancel).not.toHaveBeenCalled();
+    } finally {
+      post.mockRestore();
+      poll.mockRestore();
+      cancel.mockRestore();
     }
   });
   it("does not create a session when the upload is already canceled", async () => {

@@ -210,7 +210,14 @@ export const BundleList = memo(function BundleList({
   );
 
   const { data, isLoading, isError, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useBundleList(filters);
+    useBundleList(filters, {
+      account: Boolean(
+        (currentUserId && userId === currentUserId) ||
+        draftsOnly ||
+        collaborationsOnly ||
+        collaborationStatus,
+      ),
+    });
 
   const { audioRef: previewAudioRef, playingId, playPreview, stopPreview } = usePreviewAudio();
 

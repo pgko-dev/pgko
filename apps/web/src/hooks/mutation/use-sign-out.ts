@@ -17,7 +17,10 @@ export function useSignOut() {
       queryClient.removeQueries({
         predicate: (query) => {
           const key = query.queryKey[0];
-          return key !== "bundle-public" && key !== "bundle-list";
+          if (key === "bundle-list") {
+            return Boolean((query.queryKey[1] as { account?: boolean } | undefined)?.account);
+          }
+          return key !== "bundle-public";
         },
       });
       await queryClient.invalidateQueries();

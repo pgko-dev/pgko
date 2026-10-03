@@ -1,6 +1,6 @@
 {
   "name": "ugc-render",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "UMIGURI chart parsing, multi-column Canvas rendering and browser playback",
   "license": "MIT",
   "repository": {

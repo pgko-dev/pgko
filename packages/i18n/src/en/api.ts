@@ -2,6 +2,13 @@ import type { Widen } from "../utils.js";
 
 export const api = {
   error: {
+    resourceVersionConflict:
+      "This song pack changed while you were editing. Reload it before saving.",
+    visibilityLocked: "A moderator has locked this song pack’s visibility.",
+    invalidSongId: "One or more songs no longer belong to this song pack. Reload it before saving.",
+    idempotencyConflict: "This retry key was already used for a different request.",
+    invalidIdempotencyKey: "A valid Idempotency-Key header is required.",
+    routeNotFound: "The requested API endpoint was not found.",
     invalidCursor: "Invalid pagination cursor. Restart from the first page.",
     tooManyRequests: "You're sending too many requests. Please try again later.",
     unknown: "Something went wrong. Please try again later.",

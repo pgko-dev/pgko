@@ -103,6 +103,7 @@ function useBundleManage(bundleId: string) {
 
   const buildBaseMetadataPayload = useCallback(
     (value: BundleMetadataFormValues): BundleUpdateMetadataBody => {
+      if (!data) throw new Error("Managed bundle detail must be loaded before editing");
       const videoUrlMappings: Record<string, string> = {};
       for (const [songId, url] of Object.entries(value.videoUrlBySongId)) {
         videoUrlMappings[songId] = url.trim();
@@ -111,6 +112,7 @@ function useBundleManage(bundleId: string) {
       const representativeVideoUrl = value.videoUrl.trim();
 
       return {
+        expectedResourceVersion: data.resourceVersion,
         title: value.title.trim() || undefined,
         artist: value.artist.trim() || undefined,
         description: value.description.trim(),
@@ -120,7 +122,7 @@ function useBundleManage(bundleId: string) {
         videoUrlMappings: Object.keys(videoUrlMappings).length ? videoUrlMappings : undefined,
       };
     },
-    [data?.visibilityLocked],
+    [data],
   );
 
   const form = useContentForm({

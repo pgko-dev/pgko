@@ -2,6 +2,12 @@ import type { ApiTranslation } from "../en/api.js";
 
 export const api = {
   error: {
+    resourceVersionConflict: "编辑期间曲包已发生变化，请重新加载后保存。",
+    visibilityLocked: "管理员已锁定此曲包的可见性。",
+    invalidSongId: "部分歌曲已不属于此曲包，请重新加载后保存。",
+    idempotencyConflict: "此重试键已用于其他请求。",
+    invalidIdempotencyKey: "请求必须包含有效的 Idempotency-Key 标头。",
+    routeNotFound: "未找到请求的 API 接口。",
     invalidCursor: "分页游标无效，请从第一页重新开始。",
     tooManyRequests: "请求过于频繁，请稍后再试",
     unknown: "出了点问题，请稍后再试",

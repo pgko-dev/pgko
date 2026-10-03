@@ -24,10 +24,15 @@ describe("BundleVisibilitySchema", () => {
 
 describe("BundleUpdateMetadataBodySchema", () => {
   test("visibility is optional", () => {
-    expect(v.parse(BundleUpdateMetadataBodySchema, {}).visibility).toBeUndefined();
-    expect(v.parse(BundleUpdateMetadataBodySchema, { visibility: "unlisted" }).visibility).toBe(
-      "unlisted",
-    );
+    expect(
+      v.parse(BundleUpdateMetadataBodySchema, { expectedResourceVersion: 1 }).visibility,
+    ).toBeUndefined();
+    expect(
+      v.parse(BundleUpdateMetadataBodySchema, {
+        expectedResourceVersion: 1,
+        visibility: "unlisted",
+      }).visibility,
+    ).toBe("unlisted");
   });
 });
 

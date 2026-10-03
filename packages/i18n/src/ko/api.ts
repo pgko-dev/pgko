@@ -2,6 +2,12 @@ import type { ApiTranslation } from "../en/api.js";
 
 export const api = {
   error: {
+    resourceVersionConflict: "편집 중 곡 팩이 변경되었습니다. 다시 불러온 후 저장하세요.",
+    visibilityLocked: "관리자가 이 곡 팩의 공개 설정을 잠갔습니다.",
+    invalidSongId: "이 곡 팩에 더 이상 포함되지 않는 곡이 있습니다. 다시 불러온 후 저장하세요.",
+    idempotencyConflict: "이 재시도 키는 다른 요청에 이미 사용되었습니다.",
+    invalidIdempotencyKey: "유효한 Idempotency-Key 헤더가 필요합니다.",
+    routeNotFound: "요청한 API 엔드포인트를 찾을 수 없습니다.",
     invalidCursor: "페이지 커서가 올바르지 않습니다. 첫 페이지부터 다시 시작해 주세요.",
     tooManyRequests: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
     unknown: "문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
