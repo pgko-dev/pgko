@@ -9,8 +9,7 @@ export type PreviewViewportProps = Readonly<{
   zoom: number;
   expanded: boolean;
   tick: number;
-  follow: boolean;
-  onPan: () => void;
+  playing: boolean;
   onSeek: (tick: number) => void;
   label: string;
   options: ChartRenderOptions;

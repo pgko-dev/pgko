@@ -1,6 +1,5 @@
 import {
   AudioLines,
-  LocateFixed,
   Music2,
   Pause,
   Play,
@@ -32,8 +31,6 @@ const playbackLabels = { paused: "play", playing: "pause", buffering: "buffering
 type SettingsProps = {
   transport: RefObject<ChartTransport | null>;
   snapshot: TransportSnapshot;
-  zoom: number;
-  onZoomChange: (value: number) => void;
   options: ChartRenderOptions;
   onOptionsChange: (options: ChartRenderOptions) => void;
   container: RefObject<HTMLElement | null>;
@@ -50,8 +47,6 @@ export function PreviewControls({
   onZoomChange,
   options,
   onOptionsChange,
-  follow,
-  onFollowChange,
   onToggle,
   onNavigateBar,
   container,
@@ -61,13 +56,16 @@ export function PreviewControls({
 }: Readonly<
   SettingsProps & {
     position: number;
-    follow: boolean;
-    onFollowChange: (value: boolean) => void;
+    zoom: number;
+    onZoomChange: (value: number) => void;
     onToggle: () => void;
     onNavigateBar: (direction: -1 | 1) => void;
   }
 >) {
   const { t } = useTranslation(undefined, { keyPrefix: "ui.preview" });
+  const previousZoom = PREVIEW_ZOOMS.findLast((value) => value < zoom);
+  const nextZoom = PREVIEW_ZOOMS.find((value) => value > zoom);
+
   return (
     <div data-slot="preview-controls" className="rounded-xl border bg-muted/30 px-3 pt-0.5 pb-3">
       <div className="flex items-center gap-3">
@@ -124,23 +122,9 @@ export function PreviewControls({
           >
             <SkipForward />
           </Button>
-          <Button
-            variant={follow ? "secondary" : "ghost"}
-            size="icon-lg"
-            aria-label={t("follow")}
-            title={t("follow")}
-            aria-pressed={follow}
-            onClick={() => onFollowChange(!follow)}
-          >
-            <LocateFixed />
-          </Button>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
           <PreviewSettings
             transport={transport}
             snapshot={snapshot}
-            zoom={zoom}
-            onZoomChange={onZoomChange}
             options={options}
             onOptionsChange={onOptionsChange}
             container={container}
@@ -148,6 +132,35 @@ export function PreviewControls({
             portrait={portrait}
             onPortraitChange={onPortraitChange}
           />
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            aria-label={t("zoomOut")}
+            title={t("zoomOut")}
+            disabled={previousZoom === undefined}
+            onClick={() => {
+              if (previousZoom !== undefined) onZoomChange(previousZoom);
+            }}
+          >
+            <ZoomOut />
+          </Button>
+          <output aria-label={t("zoom")} className="min-w-11 text-center text-xs tabular-nums">
+            {zoom * 100}%
+          </output>
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            aria-label={t("zoomIn")}
+            title={t("zoomIn")}
+            disabled={nextZoom === undefined}
+            onClick={() => {
+              if (nextZoom !== undefined) onZoomChange(nextZoom);
+            }}
+          >
+            <ZoomIn />
+          </Button>
         </div>
       </div>
     </div>
@@ -157,8 +170,6 @@ export function PreviewControls({
 function PreviewSettings({
   transport,
   snapshot,
-  zoom,
-  onZoomChange,
   options,
   onOptionsChange,
   container,
@@ -170,118 +181,85 @@ function PreviewSettings({
   const [musicVolume, setMusicVolume] = useState(0.85);
   const [hitVolume, setHitVolume] = useState(0.5);
   const id = useId();
-  const previousZoom = PREVIEW_ZOOMS.findLast((value) => value < zoom);
-  const nextZoom = PREVIEW_ZOOMS.find((value) => value > zoom);
 
   return (
-    <>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon-lg"
-          aria-label={t("zoomOut")}
-          title={t("zoomOut")}
-          disabled={previousZoom === undefined}
-          onClick={() => {
-            if (previousZoom !== undefined) onZoomChange(previousZoom);
-          }}
-        >
-          <ZoomOut />
-        </Button>
-        <output aria-label={t("zoom")} className="min-w-11 text-center text-xs tabular-nums">
-          {zoom * 100}%
-        </output>
-        <Button
-          variant="ghost"
-          size="icon-lg"
-          aria-label={t("zoomIn")}
-          title={t("zoomIn")}
-          disabled={nextZoom === undefined}
-          onClick={() => {
-            if (nextZoom !== undefined) onZoomChange(nextZoom);
-          }}
-        >
-          <ZoomIn />
-        </Button>
-      </div>
-      <Popover key={expanded ? "expanded" : "inline"}>
-        <PopoverTrigger
-          render={<Button variant="ghost" size="icon-lg" />}
-          aria-label={t("settings")}
-          title={t("settings")}
-        >
-          <SlidersHorizontal />
-        </PopoverTrigger>
-        <PopoverContent container={container} side="top" align="end" className="gap-4 p-4">
-          <PopoverTitle>{t("settings")}</PopoverTitle>
-          <div>
-            <div className="flex items-center justify-between">
-              <Label id={`${id}-music`}>
-                <Music2 className="size-4 text-muted-foreground" />
-                {t("musicVolume")}
-              </Label>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {Math.round(musicVolume * 100)}%
-              </span>
-            </div>
-            <Slider
-              aria-labelledby={`${id}-music`}
-              disabled={snapshot.musicUnavailable}
-              min={0}
-              max={1}
-              step={0.05}
-              value={musicVolume}
-              onValueChange={(value) => {
-                setMusicVolume(value);
-                transport.current?.setVolumes(value, hitVolume);
-              }}
-            />
+    <Popover key={expanded ? "expanded" : "inline"}>
+      <PopoverTrigger
+        render={<Button variant="ghost" size="icon-lg" />}
+        aria-label={t("settings")}
+        title={t("settings")}
+      >
+        <SlidersHorizontal />
+      </PopoverTrigger>
+      <PopoverContent container={container} side="top" align="end" className="gap-4 p-4">
+        <PopoverTitle>{t("settings")}</PopoverTitle>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label id={`${id}-music`}>
+              <Music2 className="size-4 text-muted-foreground" />
+              {t("musicVolume")}
+            </Label>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {Math.round(musicVolume * 100)}%
+            </span>
           </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <Label id={`${id}-hits`}>
-                <AudioLines className="size-4 text-muted-foreground" />
-                {t("hitVolume")}
-              </Label>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {Math.round(hitVolume * 100)}%
-              </span>
-            </div>
-            <Slider
-              aria-labelledby={`${id}-hits`}
-              disabled={snapshot.soundUnavailable}
-              min={0}
-              max={1}
-              step={0.05}
-              value={hitVolume}
-              onValueChange={(value) => {
-                setHitVolume(value);
-                transport.current?.setVolumes(musicVolume, value);
-              }}
-            />
+          <Slider
+            aria-labelledby={`${id}-music`}
+            disabled={snapshot.musicUnavailable}
+            min={0}
+            max={1}
+            step={0.05}
+            value={musicVolume}
+            onValueChange={(value) => {
+              setMusicVolume(value);
+              transport.current?.setVolumes(value, hitVolume);
+            }}
+          />
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label id={`${id}-hits`}>
+              <AudioLines className="size-4 text-muted-foreground" />
+              {t("hitVolume")}
+            </Label>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {Math.round(hitVolume * 100)}%
+            </span>
           </div>
-          <Label htmlFor={`${id}-portrait`} className="border-t pt-4">
-            <Checkbox id={`${id}-portrait`} checked={portrait} onCheckedChange={onPortraitChange} />
-            {t("portrait")}
-          </Label>
-          <Label htmlFor={`${id}-controls`}>
-            <Checkbox
-              id={`${id}-controls`}
-              checked={options.showControlPoints ?? false}
-              onCheckedChange={(checked) => onOptionsChange({ showControlPoints: checked })}
-            />
-            {t("showControlPoints")}
-          </Label>
-          <a
-            className="border-t pt-4 text-xs text-muted-foreground underline hover:text-foreground"
-            href="/assets/NOTICE.txt"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t("credits")}
-          </a>
-        </PopoverContent>
-      </Popover>
-    </>
+          <Slider
+            aria-labelledby={`${id}-hits`}
+            disabled={snapshot.soundUnavailable}
+            min={0}
+            max={1}
+            step={0.05}
+            value={hitVolume}
+            onValueChange={(value) => {
+              setHitVolume(value);
+              transport.current?.setVolumes(musicVolume, value);
+            }}
+          />
+        </div>
+        <Label htmlFor={`${id}-portrait`} className="border-t pt-4">
+          <Checkbox id={`${id}-portrait`} checked={portrait} onCheckedChange={onPortraitChange} />
+          {t("portrait")}
+        </Label>
+        <Label htmlFor={`${id}-controls`}>
+          <Checkbox
+            id={`${id}-controls`}
+            checked={options.showControlPoints ?? false}
+            onCheckedChange={(checked) => onOptionsChange({ showControlPoints: checked })}
+          />
+          {t("showControlPoints")}
+        </Label>
+        <a
+          className="border-t pt-4 text-xs text-muted-foreground underline hover:text-foreground"
+          href="/assets/NOTICE.txt"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t("credits")}
+        </a>
+      </PopoverContent>
+    </Popover>
   );
 }

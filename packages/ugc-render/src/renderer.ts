@@ -16,6 +16,7 @@ const laneX = (lane: number) => FIELD_LEFT + (lane * FIELD_WIDTH) / 16;
 type Context = CanvasRenderingContext2D;
 type Vertex = readonly [number, number];
 const LABEL_SIZE = 10;
+const NOTE_BOTTOM_PADDING = 12;
 
 export type ChartRenderOptions = {
   showDirectionText?: boolean;
@@ -351,7 +352,12 @@ export class ChartPainter {
     const notes = this.index.query(start - 3 / pixelsPerTick, end + 44 / pixelsPerTick);
     context.save();
     context.beginPath();
-    context.rect(FIELD_LEFT, top - NOTE_PADDING, FIELD_WIDTH, bottom - top + NOTE_PADDING * 2);
+    context.rect(
+      FIELD_LEFT,
+      top - NOTE_PADDING,
+      FIELD_WIDTH,
+      bottom - top + NOTE_PADDING + NOTE_BOTTOM_PADDING,
+    );
     context.clip();
     for (const note of notes)
       if (note.kind === "hold" || note.kind === "slide") longBody(context, note, y);

@@ -96,17 +96,19 @@ async function open(page: Page, source = beatmap) {
 const noteY = (tick: number) => NOTE_PADDING + FIELD_HEIGHT - (tick * 64) / 480;
 const laneX = (lane: number) => FIELD_LEFT + (lane * FIELD_WIDTH) / 16;
 
-function canvas(page: Page) {
-  return page.locator('canvas[data-column="0"]');
+function canvas(page: Page, column = 0) {
+  return page.locator(`canvas[data-column="${column}"]`);
 }
 
-async function captureCanvas(page: Page, path: string) {
-  const url = await canvas(page).evaluate((element) => (element as HTMLCanvasElement).toDataURL());
+async function captureCanvas(page: Page, path: string, column = 0) {
+  const url = await canvas(page, column).evaluate((element) =>
+    (element as HTMLCanvasElement).toDataURL(),
+  );
   await writeFile(path, Buffer.from(url.split(",")[1], "base64"));
 }
 
-async function pixels(page: Page, x: number, y: number, width = 1, height = 1) {
-  return canvas(page).evaluate(
+async function pixels(page: Page, x: number, y: number, width = 1, height = 1, column = 0) {
+  return canvas(page, column).evaluate(
     (element, region) => {
       const surface = element as HTMLCanvasElement;
       const ratio = surface.width / region.columnWidth;
@@ -302,4 +304,44 @@ test("lane and beat grid continues behind notes in the column extension", async 
   // The empty space above the note clipping boundary stays empty.
   expect(hasGrid(await pixels(page, laneX(14) - 2, top - NOTE_PADDING - 8, 4, 4))).toBe(false);
   await captureCanvas(page, info.outputPath("column-extension.png"));
+});
+
+test("notes at the column bottom keep the extension and clip the remaining margin", async ({
+  page,
+}, info) => {
+  const source = [
+    "@BPM\t0'0\t120",
+    "@BEAT\t0\t12\t4",
+    "#0'5400:h04",
+    "#960>s",
+    "#0'5520:t44",
+    "#0'5520:H4428N",
+    "#840:s",
+    "#0'5400:s84",
+    "#960>sC4",
+    "#1'0:tC4",
+    "#2'0:t04",
+  ].join("\n");
+  const result = parseUgcChart(Buffer.from(source));
+  expect(result.diagnostics).toEqual([]);
+  const column = createLayout(result.chart!).columns[1];
+  const bottom = tickY(column, column.startTick);
+
+  await open(page, source);
+  await expect(canvas(page, 1)).toBeAttached();
+
+  // Crossing ribbons, an earlier air head and a boundary tap retain their lower edges.
+  for (const lane of [2, 6, 11, 14]) {
+    const sample = await pixels(page, laneX(lane), bottom + 2, 1, 1, 1);
+    expect(sample.slice(0, 3)).not.toEqual([0, 0, 0]);
+  }
+
+  for (const lane of [2, 6, 11]) {
+    const sample = await pixels(page, laneX(lane), bottom + 10, 1, 1, 1);
+    expect(sample.slice(0, 3)).not.toEqual([0, 0, 0]);
+  }
+
+  const margin = await pixels(page, FIELD_LEFT, bottom + 14, FIELD_WIDTH, 24, 1);
+  expect(margin.every((channel, index) => index % 4 === 3 || channel === 0)).toBe(true);
+  await captureCanvas(page, info.outputPath("column-bottom-clipping.png"), 1);
 });
