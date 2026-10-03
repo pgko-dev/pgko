@@ -191,9 +191,78 @@ test("dense air-crush sweeps retain gaps between traces", async ({ page }, info)
   expect(region).not.toEqual(await sampleRegion());
 });
 
-test("EX and air-paired ground markers stay on top and control markers are opt-in", async ({
+test("flicks cover AIR-paired hold and slide markers in either source order", async ({
   page,
 }, info) => {
+  const overlaps = [
+    { tick: 240, long: ["#0'240:h0G", "#240>s"] },
+    { tick: 960, long: ["#0'720:h0G", "#240>s"] },
+    { tick: 1440, long: ["#0'1440:s0G", "#240>s0G"] },
+    { tick: 2160, long: ["#1'0:s0G", "#240>s0G", "#480>s0G"] },
+  ];
+
+  for (const shortFirst of [true, false]) {
+    const notes = overlaps.flatMap(({ tick, long }) => {
+      const flick = `#0'${tick}:f0G`;
+      return [...(shortFirst ? [flick, ...long] : [...long, flick]), `#0'${tick}:a0GUCN`];
+    });
+    const source = ["@BPM\t0'0\t120", ...notes, "#0'2640:h0G", "#240>s", "#0'2640:a0GUCN"].join(
+      "\n",
+    );
+    const result = parseUgcChart(Buffer.from(source));
+    expect(result.diagnostics).toEqual([]);
+
+    // The first order reproduces AIR attached to a long head or child, not the flick.
+    if (shortFirst) {
+      for (const { tick } of overlaps) {
+        const air = result.chart!.notes.find((note) => note.kind === "air" && note.tick === tick)!;
+        const carrier = result.chart!.notes.find(
+          (note) =>
+            note.id === air.pairId || note.children.some((child) => child.id === air.pairId),
+        )!;
+        expect(["hold", "slide"]).toContain(carrier.kind);
+      }
+    }
+
+    await open(page, source);
+    for (const { tick } of overlaps) {
+      expect((await pixels(page, laneX(0) + 8, noteY(tick))).slice(0, 3)).toEqual([119, 119, 136]);
+      // The cyan inner stripe remains visible at both desktop and mobile pixel ratios.
+      const [red, green, blue] = await pixels(page, laneX(8), noteY(tick) - 2);
+      expect(red).toBeLessThan(150);
+      expect(green).toBeGreaterThan(180);
+      expect(blue).toBeGreaterThan(180);
+    }
+    // An unobscured AIR-paired hold still uses its green marker.
+    expect((await pixels(page, laneX(0) + 8, noteY(2640))).slice(0, 3)).toEqual([0, 255, 0]);
+    await captureCanvas(
+      page,
+      info.outputPath(`flick-over-long-${shortFirst ? "first" : "last"}.png`),
+    );
+  }
+});
+
+test("narrow ground markers cover wider markers within their layer", async ({ page }, info) => {
+  const source = [
+    "@BPM\t0'0\t120",
+    "#0'240:h44",
+    "#240>s",
+    "#0'240:s0G",
+    "#240>s0G",
+    "#0'960:t44",
+    "#0'960:f0G",
+  ].join("\n");
+  expect(parseUgcChart(Buffer.from(source)).diagnostics).toEqual([]);
+  await open(page, source);
+
+  expect((await pixels(page, laneX(4) + 8, noteY(240))).slice(0, 3)).toEqual([238, 119, 0]);
+  expect((await pixels(page, laneX(0) + 8, noteY(240))).slice(0, 3)).toEqual([0, 51, 238]);
+  expect((await pixels(page, laneX(4) + 8, noteY(960))).slice(0, 3)).toEqual([204, 0, 0]);
+  expect((await pixels(page, laneX(0) + 8, noteY(960))).slice(0, 3)).toEqual([119, 119, 136]);
+  await captureCanvas(page, info.outputPath("ground-marker-width-order.png"));
+});
+
+test("EX heads cover coincident notes and control markers are opt-in", async ({ page }, info) => {
   await open(page);
   const controls = page.getByRole("checkbox", { name: "Show control points", exact: true });
   const settings = page.getByRole("button", { name: "Preview settings", exact: true });
@@ -201,7 +270,7 @@ test("EX and air-paired ground markers stay on top and control markers are opt-i
   await expect(controls).not.toBeChecked();
   await settings.click();
   expect((await pixels(page, laneX(0) + 8, noteY(240))).slice(0, 3)).toEqual([204, 204, 0]);
-  expect((await pixels(page, laneX(0) + 8, noteY(3360))).slice(0, 3)).toEqual([0, 255, 0]);
+  expect((await pixels(page, laneX(0) + 8, noteY(3360))).slice(0, 3)).toEqual([204, 0, 0]);
   const regions = [
     { tick: 360, lane: 12 },
     { tick: 960, lane: 12 },

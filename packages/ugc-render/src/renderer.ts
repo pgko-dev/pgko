@@ -17,6 +17,7 @@ type Context = CanvasRenderingContext2D;
 type Vertex = readonly [number, number];
 const LABEL_SIZE = 10;
 const NOTE_BOTTOM_PADDING = 12;
+const AIR_LONG_KINDS = ["airHold", "airSlide", "airCrush"] as const;
 
 export type ChartRenderOptions = {
   showDirectionText?: boolean;
@@ -361,10 +362,21 @@ export class ChartPainter {
     context.clip();
     for (const note of notes)
       if (note.kind === "hold" || note.kind === "slide") longBody(context, note, y);
-    for (const note of notes) if (note.kind.startsWith("air")) longBody(context, note, y);
-    airHeads(context, notes, y);
-    groundNotes(context, notes, y, this.paired, options.showControlPoints);
-    for (const note of notes) airActions(context, note, column, y, options.showControlPoints);
+    for (const kind of AIR_LONG_KINDS) {
+      for (const note of notes) if (note.kind === kind) longBody(context, note, y);
+    }
+
+    // Margrete layers long markers below short notes; AIR pairing changes color, not depth.
+    const markers = notes.toSorted((a, b) => b.width - a.width);
+    airHeads(context, markers, y);
+    groundLongNotes(context, markers, y, this.paired, options.showControlPoints);
+    groundShortNotes(context, markers, y);
+    for (const kind of AIR_LONG_KINDS) {
+      for (const note of markers) {
+        if (note.kind === kind) airActions(context, note, column, y, options.showControlPoints);
+      }
+    }
+
     if (options.showDirectionText) directions(context, notes, y, scale);
     context.restore();
   }
@@ -384,36 +396,39 @@ export class ChartPainter {
   }
 }
 
-function groundNotes(
+function groundLongNotes(
   context: Context,
   notes: ChartNote[],
   y: (tick: number) => number,
   paired: ReadonlySet<string>,
   showControlPoints = false,
 ) {
-  const airPaired: [ChartPoint, ChartNote, boolean][] = [];
-  const draw = (point: ChartPoint, note: ChartNote, child = false) => {
-    if (paired.has(point.id)) airPaired.push([point, note, child]);
-    else tap(context, point, note, y(point.tick), false, child);
-  };
   for (const note of notes) {
-    if (note.kind.startsWith("air") || note.kind === "exTap") continue;
-    draw(note, note);
+    if (note.kind !== "hold" && note.kind !== "slide") continue;
+    tap(context, note, note, y(note.tick), paired.has(note.id));
     for (const child of note.children) {
-      if (child.action || showControlPoints) draw(child, note, true);
+      if (child.action || showControlPoints) {
+        tap(context, child, note, y(child.tick), paired.has(child.id), true);
+      }
     }
   }
-  for (const [point, note, child] of airPaired) {
-    tap(context, point, note, y(point.tick), true, child);
+}
+
+function groundShortNotes(context: Context, notes: ChartNote[], y: (tick: number) => number) {
+  for (const note of notes) {
+    if (note.kind === "tap" || note.kind === "flick" || note.kind === "damage") {
+      tap(context, note, note, y(note.tick), false);
+    }
   }
+
   // EX heads remain visible over coincident taps, hold heads and slide steps.
   for (const note of notes) {
-    if (note.kind === "exTap") tap(context, note, note, y(note.tick), paired.has(note.id));
+    if (note.kind === "exTap") tap(context, note, note, y(note.tick), false);
   }
 }
 
 function airHeads(context: Context, notes: ChartNote[], y: (tick: number) => number) {
-  for (const note of notes.toSorted((a, b) => b.width - a.width)) {
+  for (const note of notes) {
     if (!["air", "airHold", "airSlide"].includes(note.kind)) continue;
     polygon(context, airVertices(note, note.direction, y(note.tick)));
     context.fillStyle = airColor(note.color, note.direction.startsWith("D"));
