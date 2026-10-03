@@ -24,13 +24,13 @@ import { type ComponentType, type ReactNode, useEffect, useId, useRef, useState 
 import { Trans, useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { sanitizeTags } from "@pgko-dev/common";
-import { BundleRules } from "@pgko-dev/config";
+import { sanitizeTags } from "@pgko.dev/common";
+import { BundleRules } from "@pgko.dev/config";
 import type {
   BundleCollaborationRequestForOwner,
   BundleVisibility,
   ProcessResult,
-} from "@pgko-dev/schema";
+} from "@pgko.dev/schema";
 
 import { ScrollToTopButton } from "@/components/bundle/scroll-to-top-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";

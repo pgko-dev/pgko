@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BundlePublicDetail, SongSummary } from "@pgko-dev/schema";
+import type { BundlePublicDetail, SongSummary } from "@pgko.dev/schema";
 
 import { Site } from "@/components/site";
 import { Button } from "@/components/ui/button";

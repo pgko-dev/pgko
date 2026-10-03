@@ -19,7 +19,7 @@ export default defineConfig({
       "e2e/browser/preview.html",
       "e2e/browser/bundle-page.html",
     ],
-    exclude: ["ugc-render"],
+    exclude: ["@pgko.dev/ugc-render"],
   },
   build: {
     assetsInlineLimit: 0,

@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import * as v from "valibot";
 
-import { CommonSuccessSchema } from "@pgko-dev/schema";
+import { CommonSuccessSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api.ts";
 import { handleApiError } from "@/lib/parse-error";

@@ -3,7 +3,7 @@ import { Moon, Sun } from "lucide-react";
 import type { ReactNode } from "react";
 import { initReactI18next } from "react-i18next";
 
-import { languageResources } from "@pgko-dev/i18n/all";
+import { languageResources } from "@pgko.dev/i18n/all";
 
 import { Button } from "../../src/components/ui/button";
 import { ThemeProvider, useTheme } from "../../src/integrations/theme-provider";

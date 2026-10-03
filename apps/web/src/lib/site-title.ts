@@ -1,4 +1,4 @@
-import { SITE_NAME } from "@pgko-dev/config";
+import { SITE_NAME } from "@pgko.dev/config";
 
 export function sitePageTitle(pageSegment: string): string {
   const s = pageSegment.trim();

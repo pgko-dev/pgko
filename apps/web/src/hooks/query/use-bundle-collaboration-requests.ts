@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 
-import { BundleCollaborationRequestsResponseSchema } from "@pgko-dev/schema";
+import { BundleCollaborationRequestsResponseSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api";
 import { QUERY_KEYS } from "@/lib/query-keys";

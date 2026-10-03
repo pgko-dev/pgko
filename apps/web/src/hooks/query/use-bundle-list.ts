@@ -1,8 +1,8 @@
 import { type InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 
-import type { BundleListQuery, BundleListResponse } from "@pgko-dev/schema";
-import { BundleListResponseSchema } from "@pgko-dev/schema";
+import type { BundleListQuery, BundleListResponse } from "@pgko.dev/schema";
+import { BundleListResponseSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api.ts";
 import { QUERY_KEYS } from "@/lib/query-keys.ts";

@@ -2,7 +2,7 @@ import { ArrowDownWideNarrow, ArrowUpWideNarrow, Search, X } from "lucide-react"
 import { type ReactNode, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BundleListQuery } from "@pgko-dev/schema";
+import type { BundleListQuery } from "@pgko.dev/schema";
 
 import { AsyncRefreshIndicator } from "@/components/async-refresh-indicator";
 import { Button } from "@/components/ui/button";

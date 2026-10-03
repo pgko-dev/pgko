@@ -2,7 +2,7 @@ import { Calendar, Package } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { PublicUser } from "@pgko-dev/schema";
+import type { PublicUser } from "@pgko.dev/schema";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/get-initials";

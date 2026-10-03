@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { BundlePublicDetail } from "@pgko-dev/schema";
+import type { BundlePublicDetail } from "@pgko.dev/schema";
 
 import { UploaderWithCollaboratorsRow } from "@/components/bundle/uploader-with-collaborators";
 import { RemoteImage } from "@/components/remote-image";

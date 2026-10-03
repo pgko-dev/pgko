@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { SupportedLanguage } from "@pgko-dev/i18n";
+import type { SupportedLanguage } from "@pgko.dev/i18n";
 
 import JapaneseTerms from "@/components/about/terms-of-use.ja.mdx";
 import KoreanTerms from "@/components/about/terms-of-use.ko.mdx";

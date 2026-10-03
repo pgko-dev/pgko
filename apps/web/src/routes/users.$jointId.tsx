@@ -3,7 +3,7 @@ import { CheckCircle, FileEdit, Settings, Users } from "lucide-react";
 import { useCallback, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { PublicUser } from "@pgko-dev/schema";
+import type { PublicUser } from "@pgko.dev/schema";
 
 import { BundleList } from "@/components/bundle";
 import { Site } from "@/components/site";

@@ -2,7 +2,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { SongSummary } from "@pgko-dev/schema";
+import type { SongSummary } from "@pgko.dev/schema";
 
 import { PreviewPlaceholder } from "@/components/preview/placeholder";
 import Preview from "@/components/preview/preview";

@@ -18,7 +18,7 @@
     "customGroups": [
       {
         "groupName": "monorepo",
-        "elementNamePattern": ["@pgko-dev/**", "@repo/**"]
+        "elementNamePattern": ["@pgko.dev/**", "@repo/**"]
       }
     ],
     "groups": [

@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
-import { PREVIEW_ZOOMS } from "ugc-render";
+
+import { PREVIEW_ZOOMS } from "@pgko.dev/ugc-render";
 
 export async function setZoom(page: Page, zoom: number) {
   const display = page.getByRole("status", { name: "Zoom", exact: true });

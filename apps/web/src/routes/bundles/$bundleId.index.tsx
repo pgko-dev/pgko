@@ -2,7 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useMemo } from "react";
 
-import { sortSongs } from "@pgko-dev/common";
+import { sortSongs } from "@pgko.dev/common";
 
 import { BundleDetailContent, BundleDetailSkeleton } from "@/components/bundle";
 import { bundlePublicQueryOptions, useBundlePublic } from "@/hooks/query/use-bundle-public";

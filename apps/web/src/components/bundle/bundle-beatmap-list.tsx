@@ -2,7 +2,7 @@ import { Headphones, Pause, Search, Video, X } from "lucide-react";
 import { useLayoutEffect, useRef, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { SongSummary } from "@pgko-dev/schema";
+import type { SongSummary } from "@pgko.dev/schema";
 
 import { DifficultyLevelChip } from "@/components/difficulty-level-display";
 import { RemoteImage } from "@/components/remote-image";

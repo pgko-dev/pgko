@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
 import {
   CANVAS_HEIGHT,
   FIELD_LEFT,
@@ -8,8 +9,8 @@ import {
   portraitColumn,
   portraitScrollTop,
   tickY,
-} from "ugc-render";
-import { ChartPainter } from "ugc-render/canvas";
+} from "@pgko.dev/ugc-render";
+import { ChartPainter } from "@pgko.dev/ugc-render/canvas";
 
 import { ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";

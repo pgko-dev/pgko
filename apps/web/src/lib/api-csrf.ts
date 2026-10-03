@@ -4,7 +4,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
-import { Common } from "@pgko-dev/config";
+import { Common } from "@pgko.dev/config";
 
 function isSafeMethod(method: string | undefined): boolean {
   return ["GET", "HEAD", "OPTIONS"].includes(method?.toUpperCase() ?? "");

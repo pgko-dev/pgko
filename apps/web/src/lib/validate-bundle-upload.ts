@@ -1,5 +1,5 @@
-import { BundleRules, isAcceptedBundleFileType } from "@pgko-dev/config";
-import type { TranslationKey } from "@pgko-dev/i18n";
+import { BundleRules, isAcceptedBundleFileType } from "@pgko.dev/config";
+import type { TranslationKey } from "@pgko.dev/i18n";
 
 export type BundleValidationResult = { valid: true } | { valid: false; messageKey: TranslationKey };
 

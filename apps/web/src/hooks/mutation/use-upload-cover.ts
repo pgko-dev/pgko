@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as v from "valibot";
 
-import { BundleGetResponseSchema } from "@pgko-dev/schema";
+import { BundleGetResponseSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api.ts";
 import { handleApiError } from "@/lib/parse-error";

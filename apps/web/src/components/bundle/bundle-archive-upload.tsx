@@ -1,7 +1,7 @@
 import { FileIcon, Loader2, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { BundleRules } from "@pgko-dev/config";
+import { BundleRules } from "@pgko.dev/config";
 
 import {
   FileUpload,

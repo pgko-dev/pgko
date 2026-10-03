@@ -4,7 +4,7 @@ import { ArrowDownWideNarrow, ArrowUpWideNarrow, Search, X } from "lucide-react"
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { UserListSort } from "@pgko-dev/schema";
+import type { UserListSort } from "@pgko.dev/schema";
 
 import { AsyncRefreshIndicator } from "@/components/async-refresh-indicator";
 import { Site } from "@/components/site";

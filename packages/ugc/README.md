@@ -1,4 +1,4 @@
-# @pgko-dev/ugc
+# @pgko.dev/ugc
 
 UGC beatmap format parsers and types for [pgko](https://pgko.dev/). Source and contribution instructions: [pgko-dev/pgko](https://github.com/pgko-dev/pgko).
 

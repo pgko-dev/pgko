@@ -9,14 +9,14 @@
     {
       "label": "Use local public packages",
       "dependencies": [
-        "@pgko-dev/tsconfig",
-        "@pgko-dev/config",
-        "@pgko-dev/i18n",
-        "@pgko-dev/env",
-        "@pgko-dev/ugc",
-        "@pgko-dev/schema",
-        "@pgko-dev/common",
-        "ugc-render"
+        "@pgko.dev/tsconfig",
+        "@pgko.dev/config",
+        "@pgko.dev/i18n",
+        "@pgko.dev/env",
+        "@pgko.dev/ugc",
+        "@pgko.dev/schema",
+        "@pgko.dev/common",
+        "@pgko.dev/ugc-render"
       ],
       "dependencyTypes": ["prod", "dev", "peer", "optional"],
       "pinVersion": "workspace:*"

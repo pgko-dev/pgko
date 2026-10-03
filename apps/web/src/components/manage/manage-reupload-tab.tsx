@@ -4,8 +4,8 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { sortSongs } from "@pgko-dev/common";
-import type { BundleDetail } from "@pgko-dev/schema";
+import { sortSongs } from "@pgko.dev/common";
+import type { BundleDetail } from "@pgko.dev/schema";
 
 import { BundleArchiveUpload } from "@/components/bundle/bundle-archive-upload";
 import { ConfirmDialog } from "@/components/confirm-dialog";

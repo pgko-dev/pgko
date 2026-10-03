@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import { writeFile } from "node:fs/promises";
 
 import { expect, test, type Page } from "@playwright/test";
+
 import {
   COLUMN_WIDTH,
   FIELD_HEIGHT,
@@ -11,7 +12,7 @@ import {
   createLayout,
   parseUgcChart,
   tickY,
-} from "ugc-render";
+} from "@pgko.dev/ugc-render";
 
 import { setPortrait } from "./view";
 

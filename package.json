@@ -1,5 +1,5 @@
 {
-  "name": "@pgko-dev/pgko",
+  "name": "@pgko.dev/pgko",
   "private": true,
   "workspaces": [
     "apps/*",

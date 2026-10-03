@@ -1,8 +1,8 @@
 import { FileChartColumn, Pause, Play, Video } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { BundleRules } from "@pgko-dev/config";
-import type { SongSummary } from "@pgko-dev/schema";
+import { BundleRules } from "@pgko.dev/config";
+import type { SongSummary } from "@pgko.dev/schema";
 
 import { AutoScrollMarquee } from "@/components/auto-scroll-marquee";
 import { DifficultyLevelChip } from "@/components/difficulty-level-display";

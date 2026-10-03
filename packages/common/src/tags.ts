@@ -1,7 +1,7 @@
 import * as v from "valibot";
 
-import { BundleRules } from "@pgko-dev/config";
-import { BundleTagSchema, BundleTagsSchema } from "@pgko-dev/schema";
+import { BundleRules } from "@pgko.dev/config";
+import { BundleTagSchema, BundleTagsSchema } from "@pgko.dev/schema";
 
 export function normalizeTag(t: string): string {
   return t.trim().replace(/\s+/g, " ").toLowerCase();

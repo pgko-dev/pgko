@@ -5,7 +5,7 @@
  *   `translator("vali.foo")`, and bare string literals like
  *   `"api.error.unknown"` used in helpers such as `status`, `userError`,
  *   and `serverError`.
- * - Compares against defined keys in @pgko-dev/i18n (en ui/api/validation).
+ * - Compares against defined keys in @pgko.dev/i18n (en ui/api/validation).
  * - In check mode (default), prints unused keys per namespace.
  * - With --fix, removes unused keys from all locales and rewrites i18n files.
  *

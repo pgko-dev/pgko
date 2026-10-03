@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { SITE_NAME } from "@pgko-dev/config";
+import { SITE_NAME } from "@pgko.dev/config";
 
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { sitePageTitle } from "@/lib/site-title";

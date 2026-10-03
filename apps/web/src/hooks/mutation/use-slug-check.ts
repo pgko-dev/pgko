@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import * as v from "valibot";
 
-import { UserSlugAvailableResponseSchema } from "@pgko-dev/schema";
+import { UserSlugAvailableResponseSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api.ts";
 import { MUTATION_KEYS } from "@/lib/query-keys.ts";

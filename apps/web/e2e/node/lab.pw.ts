@@ -1,7 +1,8 @@
 import { Buffer } from "node:buffer";
 
 import { expect, test } from "@playwright/test";
-import { FIELD_LEFT, LOOK_AHEAD, NOTE_PADDING } from "ugc-render";
+
+import { FIELD_LEFT, LOOK_AHEAD, NOTE_PADDING } from "@pgko.dev/ugc-render";
 
 import { wave } from "./audio";
 import { setPortrait, setZoom } from "./view";

@@ -1,4 +1,4 @@
-import type { BundleListQuery, UserListQuery } from "@pgko-dev/schema";
+import type { BundleListQuery, UserListQuery } from "@pgko.dev/schema";
 
 export const QUERY_KEYS = {
   bundlePrivate: (bundleId?: string) => (bundleId ? ["bundle-private", bundleId] : []),

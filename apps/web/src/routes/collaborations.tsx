@@ -3,7 +3,7 @@ import { Ban, Check, CheckCircle2, Clock, Loader2, LogOut, X, XCircle } from "lu
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BundleListItem, CollaborationRequestStatus } from "@pgko-dev/schema";
+import type { BundleListItem, CollaborationRequestStatus } from "@pgko.dev/schema";
 
 import { BundleList } from "@/components/bundle";
 import { ConfirmDialog } from "@/components/confirm-dialog";

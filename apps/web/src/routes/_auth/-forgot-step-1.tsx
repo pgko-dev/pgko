@@ -2,8 +2,8 @@ import { AtSign } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { UserRules } from "@pgko-dev/config";
-import { tEmailSchema } from "@pgko-dev/schema";
+import { UserRules } from "@pgko.dev/config";
+import { tEmailSchema } from "@pgko.dev/schema";
 
 import { CardContent } from "@/components/ui/card";
 import { FieldGroup, FieldSet } from "@/components/ui/field";

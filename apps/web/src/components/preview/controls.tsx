@@ -12,9 +12,10 @@ import {
 } from "lucide-react";
 import { useId, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { PREVIEW_ZOOMS } from "ugc-render";
-import type { ChartRenderOptions } from "ugc-render/canvas";
-import type { ChartTransport, TransportSnapshot } from "ugc-render/playback";
+
+import { PREVIEW_ZOOMS } from "@pgko.dev/ugc-render";
+import type { ChartRenderOptions } from "@pgko.dev/ugc-render/canvas";
+import type { ChartTransport, TransportSnapshot } from "@pgko.dev/ugc-render/playback";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
