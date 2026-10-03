@@ -1,5 +1,22 @@
 # @pgko.dev/tsconfig
 
-Shared TypeScript compiler settings for [pgko](https://pgko.dev/). Source and contribution instructions: [pgko-dev/pgko](https://github.com/pgko-dev/pgko).
+Shared TypeScript configurations for validation, package builds, and React projects.
 
-Licensed under MIT.
+## Usage
+
+```sh
+bun add --dev @pgko.dev/tsconfig typescript
+```
+
+```json
+{
+  "extends": "@pgko.dev/tsconfig/base.json",
+  "include": ["src"]
+}
+```
+
+Use `react-library.json` for React and DOM types, and `build.json` alongside the base configuration for package output.
+
+See [configuration notes](https://github.com/pgko-dev/pgko/blob/main/docs/packages.md#tsconfig) and [workspace development](https://github.com/pgko-dev/pgko/blob/main/docs/development.md).
+
+[MIT license](LICENSE).

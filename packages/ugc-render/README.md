@@ -1,12 +1,33 @@
 # @pgko.dev/ugc-render
 
-UMIGURI beatmap parsing, layout, Canvas rendering, and playback for [pgko](https://pgko.dev/). Framework independent, with no runtime dependencies. React controls and browser tests live in [apps/web](../../apps/web).
+UMIGURI chart parsing, layout, Canvas rendering, and browser playback. Framework independent, with no runtime dependencies.
 
-| Entry point                     | Purpose                                          |
-| ------------------------------- | ------------------------------------------------ |
-| `@pgko.dev/ugc-render`          | Beatmap parsing, preparation, layout, and timing |
-| `@pgko.dev/ugc-render/canvas`   | Canvas rendering                                 |
-| `@pgko.dev/ugc-render/playback` | Audio transport                                  |
-| `@pgko.dev/ugc-render/worker`   | Cancellable worker preparation                   |
+## Usage
 
-Based on [MargreteOnline by inonote](https://github.com/inonote/MargreteOnline). Licensed under MIT; see [third-party notices](THIRD_PARTY_NOTICES.md).
+```sh
+bun add @pgko.dev/ugc-render
+```
+
+```ts
+import { prepareChart } from "@pgko.dev/ugc-render";
+
+const response = await fetch("/chart.ugc");
+const chartBytes = new Uint8Array(await response.arrayBuffer());
+const prepared = prepareChart(chartBytes);
+if (prepared.chart) {
+  console.log(prepared.layout, prepared.hits);
+} else {
+  console.error(prepared.diagnostics);
+}
+```
+
+| Entry point                     | Purpose                                  |
+| ------------------------------- | ---------------------------------------- |
+| `@pgko.dev/ugc-render`          | Parsing, preparation, layout, and timing |
+| `@pgko.dev/ugc-render/canvas`   | Canvas painting                          |
+| `@pgko.dev/ugc-render/playback` | Browser audio transport                  |
+| `@pgko.dev/ugc-render/worker`   | Cancellable chart preparation            |
+
+See [integration notes](https://github.com/pgko-dev/pgko/blob/main/docs/packages.md#ugc-render) and [browser testing](https://github.com/pgko-dev/pgko/blob/main/docs/development.md#browser-tests).
+
+Based on [MargreteOnline by inonote](https://github.com/inonote/MargreteOnline). [MIT license](LICENSE); see [third-party notices](THIRD_PARTY_NOTICES.md).

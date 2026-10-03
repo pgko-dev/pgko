@@ -1,13 +1,26 @@
 # pgko worker
 
-Cloudflare crawler previews for bundle and user pages. From the repository root:
+Cloudflare Worker that serves crawler previews for bundle and user pages.
+
+## Quick start
+
+Complete the [workspace setup](../../README.md#prerequisites), then run from the repository root:
 
 ```sh
 cp apps/worker/.dev.vars.example apps/worker/.dev.vars
 bun run dev:worker
-bun run build:worker
 ```
 
-Set `API_ORIGIN` in `.dev.vars` to an API origin. Routes and production settings are in `wrangler.toml`. Regenerate bindings with `bun run --cwd apps/worker types`.
+Set `API_ORIGIN` in `.dev.vars` to the API origin.
 
-`deploy-worker.yml` deploys manually from `main`, using Cloudflare credentials in the `worker-production` environment.
+## Common commands
+
+Run from the repository root:
+
+| Command                           | Purpose                                         |
+| --------------------------------- | ----------------------------------------------- |
+| `bun run build:worker`            | Build without deploying                         |
+| `bun run --cwd apps/worker test`  | Run Worker tests                                |
+| `bun run --cwd apps/worker types` | Regenerate bindings after configuration changes |
+
+See [Worker development](../../docs/development.md#worker) and [deployment](../../docs/deployment.md#worker).

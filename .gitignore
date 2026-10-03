@@ -60,7 +60,6 @@ sync.sh
 # git worktrees
 .worktrees
 
-docs/*
 qodana.yaml
 
 issues.md
