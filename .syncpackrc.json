@@ -15,7 +15,8 @@
         "@pgko-dev/env",
         "@pgko-dev/ugc",
         "@pgko-dev/schema",
-        "@pgko-dev/common"
+        "@pgko-dev/common",
+        "ugc-render"
       ],
       "dependencyTypes": ["prod", "dev", "peer", "optional"],
       "pinVersion": "workspace:*"

@@ -13,10 +13,15 @@ const registryRetryIntervalMs = 30_000;
 const manifest = await Bun.file(join(root, "packages/config/package.json")).json();
 const version = manifest.version;
 const deadline = Date.now() + registryWaitTimeoutMs;
-let pending = [...packageNames];
+let pending: string[] = await Promise.all(
+  packageNames.map(async (directory) => {
+    const pkg = await Bun.file(join(root, "packages", directory, "package.json")).json();
+    return pkg.name;
+  }),
+);
 
 async function isAvailable(name: string): Promise<boolean> {
-  const response = await fetch(`https://registry.npmjs.org/@pgko-dev%2f${name}`, {
+  const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`, {
     headers: { accept: "application/vnd.npm.install-v1+json" },
     signal: AbortSignal.timeout(registryRequestTimeoutMs),
   });

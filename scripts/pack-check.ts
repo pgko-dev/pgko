@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { dependencyGroups, packageNames, root, run } from "./packages";
+import { dependencyGroups, packageArchiveName, packageNames, root, run } from "./packages";
 
 type RuntimeExport = {
   types: string;
@@ -16,6 +16,7 @@ const allowedPackageFiles = new Set([
   "package.json",
   "README.md",
   "LICENSE",
+  "THIRD_PARTY_NOTICES.md",
   "dist",
   "base.json",
   "build.json",
@@ -38,6 +39,7 @@ const temp = await mkdtemp(join(tmpdir(), "pgko-pack-check-"));
 const dependencies: Record<string, string> = {};
 const imports: string[] = [];
 const types: string[] = [];
+const browserTypes: string[] = [];
 let version: string | undefined;
 
 try {
@@ -51,7 +53,7 @@ try {
 
     await run(["bun", "pm", "pack", "--destination", artifacts], source);
 
-    const tarball = resolve(artifacts, `pgko-dev-${name}-${version}.tgz`);
+    const tarball = resolve(artifacts, packageArchiveName(sourcePkg.name, version!));
     const unpacked = join(temp, name);
 
     await mkdir(unpacked);
@@ -95,7 +97,8 @@ try {
       await readFile(join(pkgDir, value.types));
 
       imports.push(`await import(${JSON.stringify(specifier)});`);
-      types.push(`import ${JSON.stringify(specifier)};`);
+      const typeImports = name === "ugc-render" && key !== "." ? browserTypes : types;
+      typeImports.push(`import ${JSON.stringify(specifier)};`);
     }
 
     dependencies[pkg.name] = tarball;
@@ -124,10 +127,11 @@ try {
 
   await run(["node", "smoke.mjs"], consumer);
   await run(["bun", "smoke.mjs"], consumer);
-  await Bun.write(join(consumer, "smoke.ts"), types.join("\n"));
 
   // Both checks reuse the same tsconfig path, so writes and compiler runs must not overlap.
   for (const environment of consumerEnvironments) {
+    const typeImports = environment.lib.includes("DOM") ? [...types, ...browserTypes] : types;
+    await Bun.write(join(consumer, "smoke.ts"), typeImports.join("\n"));
     const compilerConfig = {
       extends: "@pgko-dev/tsconfig/base.json",
       compilerOptions: {
