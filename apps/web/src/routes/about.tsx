@@ -56,7 +56,7 @@ function About() {
   const showVersion = webBuild != null || apiBuild != null;
 
   return (
-    <Site.Page title={t("ui.aboutPage.title")}>
+    <Site.Page title={t("ui.aboutPage.title")} layout="narrow">
       {showVersion && (
         <SectionCard title={t("ui.aboutPage.versionHeading")}>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">

@@ -29,10 +29,8 @@ function RouteComponent() {
         <Navbar />
         <PageTransitionProgress />
         <EnvironmentWatermark />
-        <Site.Main className="flex items-center justify-center">
-          <div className="w-full [view-transition-name:main-content]">
-            <Outlet />
-          </div>
+        <Site.Main>
+          <Outlet />
         </Site.Main>
       </Site>
       <Devtools />

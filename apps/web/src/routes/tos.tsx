@@ -20,7 +20,7 @@ function TermsOfUsePage() {
   const TermsOfUse = termsByLanguage[i18n.language as SupportedLanguage] ?? EnglishTerms;
 
   return (
-    <Site.Page documentTitle={t("ui.nav.guidelines")}>
+    <Site.Page documentTitle={t("ui.nav.guidelines")} layout="narrow">
       <div className="typeset typeset-docs">
         <TermsOfUse />
       </div>

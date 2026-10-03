@@ -19,7 +19,7 @@ const pageLayout =
 export function BundleDetailSkeleton() {
   const { t } = useTranslation();
   return (
-    <Site.Page documentTitle={t("ui.loading")}>
+    <Site.Page documentTitle={t("ui.loading")} layout="wide">
       <div className={pageLayout} aria-hidden>
         <Skeleton className="h-7 w-16 shrink-0" />
         <div className="flex shrink-0 items-center gap-3">
@@ -64,7 +64,7 @@ export function BundleDetailContent({
   };
 
   return (
-    <Site.Page documentTitle={displayTitle}>
+    <Site.Page documentTitle={displayTitle} layout="wide">
       <div className={pageLayout}>
         <div className="flex shrink-0 flex-col gap-2">
           <Button variant="ghost" size="sm" className="-ml-2 w-fit" onClick={handleBack}>

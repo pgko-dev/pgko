@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
+import { Site } from "@/components/site";
 import { isSafeRedirectPath } from "@/lib/safe-redirect";
 
 export const Route = createFileRoute("/_auth")({
@@ -18,8 +19,10 @@ export const Route = createFileRoute("/_auth")({
 
 function RouteComponent() {
   return (
-    <div className="flex items-center justify-center px-0 sm:px-4">
-      <Outlet />
-    </div>
+    <Site.Container layout="narrow">
+      <div className="flex items-center justify-center">
+        <Outlet />
+      </div>
+    </Site.Container>
   );
 }

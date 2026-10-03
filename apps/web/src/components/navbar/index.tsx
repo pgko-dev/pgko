@@ -3,6 +3,7 @@ import { Dice3, Loader2, Upload } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 
+import { Site } from "@/components/site";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/auth";
 import { useRandomBundle } from "@/hooks/mutation/use-random-bundle";
@@ -228,7 +229,7 @@ export const Navbar = ({ className, ...props }: Readonly<React.HTMLAttributes<HT
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full overflow-x-clip border-b bg-background/80 px-[5vw] backdrop-blur-xl select-none supports-backdrop-filter:bg-background/70 sm:px-[7.5vw] md:px-[10vw] lg:px-[12.5vw] xl:px-[15vw]",
+        "sticky top-0 z-50 w-full overflow-x-clip border-b bg-background/80 backdrop-blur-xl select-none supports-backdrop-filter:bg-background/70",
         className,
       )}
       {...props}
@@ -301,48 +302,50 @@ export const Navbar = ({ className, ...props }: Readonly<React.HTMLAttributes<HT
         </div>
       </div>
 
-      <div ref={rowRef} className="mx-auto flex h-16 max-w-screen-2xl items-center gap-4">
-        <LogoButton />
+      <Site.Container layout="wide" className="py-0">
+        <div ref={rowRef} className="flex h-16 items-center gap-4">
+          <LogoButton />
 
-        <nav aria-label={t("ui.nav.menu")} className="flex min-w-0 items-center gap-1">
-          {!overflow.browse ? (
-            <Link
-              to="/"
-              activeOptions={{ exact: true }}
-              activeProps={{ className: "bg-muted text-foreground" }}
-              className={navLinkClass}
-            >
-              {t("ui.nav.browse")}
-            </Link>
-          ) : null}
-          {!overflow.creators ? (
-            <Link
-              to="/users"
-              activeOptions={{ exact: true }}
-              aria-current={isCreatorsActive ? "page" : undefined}
-              className={cn(navLinkClass, isCreatorsActive && "bg-muted text-foreground")}
-            >
-              {t("ui.nav.creators")}
-            </Link>
-          ) : null}
-          {profileId && !overflow.profile ? (
-            <Link
-              to="/users/$jointId"
-              params={{ jointId: profileId }}
-              activeOptions={{ exact: true }}
-              aria-current={isOwnProfile ? "page" : undefined}
-              className={cn(navLinkClass, isOwnProfile && "bg-muted text-foreground")}
-            >
-              {t("ui.nav.userPossessive")}
-            </Link>
-          ) : null}
-          <RandomBundleButton compact={!showLeftNavPeer} />
-        </nav>
+          <nav aria-label={t("ui.nav.menu")} className="flex min-w-0 items-center gap-1">
+            {!overflow.browse ? (
+              <Link
+                to="/"
+                activeOptions={{ exact: true }}
+                activeProps={{ className: "bg-muted text-foreground" }}
+                className={navLinkClass}
+              >
+                {t("ui.nav.browse")}
+              </Link>
+            ) : null}
+            {!overflow.creators ? (
+              <Link
+                to="/users"
+                activeOptions={{ exact: true }}
+                aria-current={isCreatorsActive ? "page" : undefined}
+                className={cn(navLinkClass, isCreatorsActive && "bg-muted text-foreground")}
+              >
+                {t("ui.nav.creators")}
+              </Link>
+            ) : null}
+            {profileId && !overflow.profile ? (
+              <Link
+                to="/users/$jointId"
+                params={{ jointId: profileId }}
+                activeOptions={{ exact: true }}
+                aria-current={isOwnProfile ? "page" : undefined}
+                className={cn(navLinkClass, isOwnProfile && "bg-muted text-foreground")}
+              >
+                {t("ui.nav.userPossessive")}
+              </Link>
+            ) : null}
+            <RandomBundleButton compact={!showLeftNavPeer} />
+          </nav>
 
-        <div className="flex-1" aria-hidden="true" />
+          <div className="flex-1" aria-hidden="true" />
 
-        <NavbarAccountActions isAuthenticated={Boolean(user)} overflow={overflow} />
-      </div>
+          <NavbarAccountActions isAuthenticated={Boolean(user)} overflow={overflow} />
+        </div>
+      </Site.Container>
     </header>
   );
 };
