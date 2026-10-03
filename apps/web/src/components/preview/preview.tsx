@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { SongSummary } from "@pgko-dev/schema";
+import type { SongSummary } from "@pgko.dev/schema";
 
 import { loadWithTimeout } from "@/lib/preview/load-timeout";
 import {

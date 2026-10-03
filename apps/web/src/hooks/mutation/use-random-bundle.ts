@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import * as v from "valibot";
 
-import { BundleRandomResponseSchema } from "@pgko-dev/schema";
+import { BundleRandomResponseSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api.ts";
 import { setBundleReturnTo } from "@/lib/bundle-return";

@@ -1,7 +1,7 @@
-import type { ChartDiagnostic, ChartLayout, PreparedChart, UgcChart } from "ugc-render";
 import * as v from "valibot";
 
-import { BundleFilesResponseSchema, type BundleFilesResponse } from "@pgko-dev/schema";
+import { BundleFilesResponseSchema, type BundleFilesResponse } from "@pgko.dev/schema";
+import type { ChartDiagnostic, ChartLayout, PreparedChart, UgcChart } from "@pgko.dev/ugc-render";
 
 import { apiClient } from "@/lib/api";
 

@@ -3,7 +3,7 @@ import i18n from "i18next";
 import { toast } from "sonner";
 import * as v from "valibot";
 
-import type { TranslationKey } from "@pgko-dev/i18n";
+import type { TranslationKey } from "@pgko.dev/i18n";
 
 interface ValidationError {
   value?: {

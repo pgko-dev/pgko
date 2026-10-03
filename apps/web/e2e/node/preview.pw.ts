@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 
 import { expect, test, type Page } from "@playwright/test";
+
 import {
   COLUMN_WIDTH,
   CONTENT_HEIGHT,
@@ -10,7 +11,7 @@ import {
   FIELD_WIDTH,
   NOTE_PADDING,
   PREVIEW_ZOOMS,
-} from "ugc-render";
+} from "@pgko.dev/ugc-render";
 
 import { wave } from "./audio";
 import { setPortrait, setZoom } from "./view";

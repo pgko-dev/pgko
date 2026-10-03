@@ -13,7 +13,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BundleListItem, BundleListQuery, BundleListSong } from "@pgko-dev/schema";
+import type { BundleListItem, BundleListQuery, BundleListSong } from "@pgko.dev/schema";
 
 import { Spinner } from "@/components/ui/spinner";
 import { useBundleList } from "@/hooks/query/use-bundle-list";

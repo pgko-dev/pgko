@@ -30,8 +30,8 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { isDraftLikeBundleStatus, sortSongs } from "@pgko-dev/common";
-import type { BundleListItem, BundleListSong } from "@pgko-dev/schema";
+import { isDraftLikeBundleStatus, sortSongs } from "@pgko.dev/common";
+import type { BundleListItem, BundleListSong } from "@pgko.dev/schema";
 
 import { AutoScrollMarquee } from "@/components/auto-scroll-marquee";
 import { UploaderWithCollaboratorsRow } from "@/components/bundle/uploader-with-collaborators";

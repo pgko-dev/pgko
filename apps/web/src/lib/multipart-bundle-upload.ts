@@ -5,7 +5,7 @@ import {
   CreateBundleUploadSessionResponseSchema,
   type BundleDetail,
   type BundleUploadSessionKind,
-} from "@pgko-dev/schema";
+} from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api";
 

@@ -1,5 +1,5 @@
 {
-  "extends": "@pgko-dev/tsconfig/base.json",
+  "extends": "@pgko.dev/tsconfig/base.json",
   "compilerOptions": {
     "skipLibCheck": true,
     "moduleDetection": "force",

@@ -1,5 +1,5 @@
 {
-  "name": "@pgko-dev/worker",
+  "name": "@pgko.dev/worker",
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
@@ -20,7 +20,7 @@
     "check:coverage": "bun run lint && bun run fmt && bun run tsc && bun run test:coverage && bun run build"
   },
   "devDependencies": {
-    "@pgko-dev/tsconfig": "workspace:*",
+    "@pgko.dev/tsconfig": "workspace:*",
     "@types/bun": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",

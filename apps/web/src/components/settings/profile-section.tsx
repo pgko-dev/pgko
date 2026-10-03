@@ -3,8 +3,8 @@ import { CircleCheck, CircleX, Save, User } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { UserRules } from "@pgko-dev/config";
-import { type PrivateUser, tBioSchema, tNameSchema, tSlugSchema } from "@pgko-dev/schema";
+import { UserRules } from "@pgko.dev/config";
+import { type PrivateUser, tBioSchema, tNameSchema, tSlugSchema } from "@pgko.dev/schema";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

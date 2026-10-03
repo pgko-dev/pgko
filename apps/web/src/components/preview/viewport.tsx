@@ -1,5 +1,5 @@
-import type { UgcChart } from "ugc-render";
-import type { ChartRenderOptions } from "ugc-render/canvas";
+import type { UgcChart } from "@pgko.dev/ugc-render";
+import type { ChartRenderOptions } from "@pgko.dev/ugc-render/canvas";
 
 import { OverviewViewport } from "./overview";
 import { PortraitViewport } from "./portrait";

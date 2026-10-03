@@ -1,7 +1,8 @@
 import { Buffer } from "node:buffer";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { FIELD_LEFT, FIELD_WIDTH, createPortraitLayout, parseUgcChart } from "ugc-render";
+
+import { FIELD_LEFT, FIELD_WIDTH, createPortraitLayout, parseUgcChart } from "@pgko.dev/ugc-render";
 
 import { fixture } from "../fixtures/beatmap";
 

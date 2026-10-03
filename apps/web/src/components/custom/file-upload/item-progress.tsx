@@ -4,7 +4,7 @@ import { useRender } from "@base-ui/react/use-render";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { TranslationKey } from "@pgko-dev/i18n";
+import type { TranslationKey } from "@pgko.dev/i18n";
 
 import { extractTranslationKeys } from "@/lib/parse-error";
 import { cn } from "@/lib/utils";

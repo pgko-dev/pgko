@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import type { PreparedChart } from "ugc-render";
-import { prepareInWorker } from "ugc-render/worker";
+
+import type { PreparedChart } from "@pgko.dev/ugc-render";
+import { prepareInWorker } from "@pgko.dev/ugc-render/worker";
 
 import { PreviewDiagnostics } from "../../src/components/preview/diagnostics";
 import { PreviewPlayer } from "../../src/components/preview/player";

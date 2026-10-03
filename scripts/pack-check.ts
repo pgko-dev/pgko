@@ -68,7 +68,7 @@ try {
 
     for (const group of dependencyGroups) {
       for (const [dependency, requested] of Object.entries(pkg[group] ?? {})) {
-        if (dependency.startsWith("@pgko-dev/")) {
+        if (dependency.startsWith("@pgko.dev/")) {
           assert.equal(requested, version, `${pkg.name}: ${dependency} must use ${version}`);
         }
       }
@@ -133,7 +133,7 @@ try {
     const typeImports = environment.lib.includes("DOM") ? [...types, ...browserTypes] : types;
     await Bun.write(join(consumer, "smoke.ts"), typeImports.join("\n"));
     const compilerConfig = {
-      extends: "@pgko-dev/tsconfig/base.json",
+      extends: "@pgko.dev/tsconfig/base.json",
       compilerOptions: {
         module: "NodeNext",
         moduleResolution: "NodeNext",

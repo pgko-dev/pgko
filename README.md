@@ -24,7 +24,7 @@ bun run check
 
 ## Package releases
 
-Packages release together for external consumers. Run `bun run version:packages <version>` and `bun run release:check`, then commit and push a matching `v<version>` tag. Prereleases use `next`.
+All eight shared packages publish under `@pgko.dev`. Packages release together for external consumers. Run `bun run version:packages <version>` and `bun run release:check`, then commit and push a matching `v<version>` tag. Prereleases use `next`.
 
 ## License
 

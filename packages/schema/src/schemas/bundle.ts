@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import * as v from "valibot";
 
-import { BundleRules } from "@pgko-dev/config";
+import { BundleRules } from "@pgko.dev/config";
 
 import { dTranslator } from "../i18n.js";
 

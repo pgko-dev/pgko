@@ -1,10 +1,11 @@
 import { Maximize, Minimize, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { PreparedChart } from "ugc-render";
-import { createTiming } from "ugc-render";
-import type { ChartRenderOptions } from "ugc-render/canvas";
-import { ChartTransport, type TransportSnapshot } from "ugc-render/playback";
+
+import type { PreparedChart } from "@pgko.dev/ugc-render";
+import { createTiming } from "@pgko.dev/ugc-render";
+import type { ChartRenderOptions } from "@pgko.dev/ugc-render/canvas";
+import { ChartTransport, type TransportSnapshot } from "@pgko.dev/ugc-render/playback";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";

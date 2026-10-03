@@ -3,8 +3,8 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { BundleRules, UserRules } from "@pgko-dev/config";
-import type { PrivateUser } from "@pgko-dev/schema";
+import { BundleRules, UserRules } from "@pgko.dev/config";
+import type { PrivateUser } from "@pgko.dev/schema";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ImageCropper } from "@/components/img-crop";

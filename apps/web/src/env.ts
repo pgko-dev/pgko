@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import type { ClientEnvironment } from "@pgko-dev/env/client";
+import type { ClientEnvironment } from "@pgko.dev/env/client";
 
 export const isProduction = import.meta.env.PROD;
 
@@ -27,7 +27,7 @@ async function loadEnvironment(): Promise<ClientEnvironment> {
     return clientEnvironment;
   }
 
-  const { ClientEnvironmentSchema } = await import("@pgko-dev/env/client");
+  const { ClientEnvironmentSchema } = await import("@pgko.dev/env/client");
   return v.parse(ClientEnvironmentSchema, clientEnvironment);
 }
 

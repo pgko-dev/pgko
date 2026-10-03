@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import type { ChartDiagnostic } from "ugc-render";
+
+import type { ChartDiagnostic } from "@pgko.dev/ugc-render";
 
 export function PreviewDiagnostics({
   diagnostics,

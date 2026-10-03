@@ -2,7 +2,7 @@ import i18n from "i18next";
 import { FileAudio, FileCodeCorner, Image } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { ProcessResult } from "@pgko-dev/schema";
+import type { ProcessResult } from "@pgko.dev/schema";
 
 import { AutoScrollMarquee } from "@/components/auto-scroll-marquee";
 import {

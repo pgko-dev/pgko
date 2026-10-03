@@ -3,8 +3,8 @@ import { useCookies } from "react-cookie";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { Common } from "@pgko-dev/config";
-import { type languageMeta, supportedLanguages } from "@pgko-dev/i18n";
+import { Common } from "@pgko.dev/config";
+import { type languageMeta, supportedLanguages } from "@pgko.dev/i18n";
 
 import { env } from "@/env.ts";
 

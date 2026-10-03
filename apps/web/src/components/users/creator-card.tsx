@@ -3,7 +3,7 @@ import { Clock, Package } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { UserListItem } from "@pgko-dev/schema";
+import type { UserListItem } from "@pgko.dev/schema";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";

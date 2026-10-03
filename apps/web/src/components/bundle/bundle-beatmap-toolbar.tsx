@@ -8,7 +8,7 @@ import {
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { SongSummary } from "@pgko-dev/schema";
+import type { SongSummary } from "@pgko.dev/schema";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";

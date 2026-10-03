@@ -1,6 +1,6 @@
 {
-  "name": "@pgko-dev/env",
-  "version": "0.2.0",
+  "name": "@pgko.dev/env",
+  "version": "0.2.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -36,7 +36,7 @@
     "valibot": "catalog:"
   },
   "devDependencies": {
-    "@pgko-dev/tsconfig": "workspace:*",
+    "@pgko.dev/tsconfig": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }

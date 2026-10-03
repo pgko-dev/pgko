@@ -3,8 +3,8 @@ import { AtSign, LogIn } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { UserRules } from "@pgko-dev/config";
-import { tEmailSchema, tLoginPasswordSchema } from "@pgko-dev/schema";
+import { UserRules } from "@pgko.dev/config";
+import { tEmailSchema, tLoginPasswordSchema } from "@pgko.dev/schema";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

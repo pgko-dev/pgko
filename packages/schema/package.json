@@ -1,6 +1,6 @@
 {
-  "name": "@pgko-dev/schema",
-  "version": "0.2.0",
+  "name": "@pgko.dev/schema",
+  "version": "0.2.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,12 +30,12 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@pgko-dev/config": "workspace:*",
-    "@pgko-dev/i18n": "workspace:*",
+    "@pgko.dev/config": "workspace:*",
+    "@pgko.dev/i18n": "workspace:*",
     "valibot": "catalog:"
   },
   "devDependencies": {
-    "@pgko-dev/tsconfig": "workspace:*",
+    "@pgko.dev/tsconfig": "workspace:*",
     "@types/bun": "catalog:",
     "i18next": "catalog:",
     "typescript": "catalog:"

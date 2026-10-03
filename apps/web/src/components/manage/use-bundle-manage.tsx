@@ -4,15 +4,15 @@ import type { ReactNode } from "react";
 import { createContext, useCallback, use, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { sortSongs } from "@pgko-dev/common";
-import type { BundleDetail, BundleUpdateMetadataBody, BundleVisibility } from "@pgko-dev/schema";
+import { sortSongs } from "@pgko.dev/common";
+import type { BundleDetail, BundleUpdateMetadataBody, BundleVisibility } from "@pgko.dev/schema";
 import {
   tBundleArtistSchema,
   tBundleDescriptionSchema,
   tBundleTagsSchema,
   tBundleTitleSchema,
   tBundleVideoUrlSchema,
-} from "@pgko-dev/schema";
+} from "@pgko.dev/schema";
 
 import { useDeleteBundle } from "@/hooks/mutation/use-delete-bundle";
 import { useReleaseBundle } from "@/hooks/mutation/use-release-bundle";

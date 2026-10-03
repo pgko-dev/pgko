@@ -1,4 +1,4 @@
-import { prepareInWorker } from "ugc-render/worker";
+import { prepareInWorker } from "@pgko.dev/ugc-render/worker";
 
 export function parseInWorker(bytes: ArrayBuffer, signal: AbortSignal) {
   return prepareInWorker(bytes, {

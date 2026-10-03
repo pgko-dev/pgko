@@ -1,5 +1,5 @@
 {
-  "extends": ["./tsconfig.json", "@pgko-dev/tsconfig/build.json"],
+  "extends": ["./tsconfig.json", "@pgko.dev/tsconfig/build.json"],
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist"

@@ -1,7 +1,7 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 
-import type { BundleDetail } from "@pgko-dev/schema";
+import type { BundleDetail } from "@pgko.dev/schema";
 
 import { DraftContent } from "@/components/manage/draft-content";
 import { bundlePrivateQueryOptions } from "@/hooks/query/use-bundle-private";

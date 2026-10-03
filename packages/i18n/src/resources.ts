@@ -1,4 +1,4 @@
-import type { ApiTranslation, UiTranslation, ValiTranslation } from "@pgko-dev/i18n/en";
+import type { ApiTranslation, UiTranslation, ValiTranslation } from "@pgko.dev/i18n/en";
 
 import type { defaultNamespace } from "./languages.js";
 import type { DotNestedKeys } from "./utils.js";

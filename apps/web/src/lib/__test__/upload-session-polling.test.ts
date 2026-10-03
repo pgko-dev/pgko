@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { AxiosError, AxiosHeaders } from "axios";
 
-import type { BundleDetail, BundleUploadSessionResponse } from "@pgko-dev/schema";
+import type { BundleDetail, BundleUploadSessionResponse } from "@pgko.dev/schema";
 
 import { pollUploadSession, waitForUploadPoll } from "../upload-session-polling";
 

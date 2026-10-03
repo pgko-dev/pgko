@@ -3,15 +3,15 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import Cookies from "universal-cookie";
 
-import { Common } from "@pgko-dev/config";
+import { Common } from "@pgko.dev/config";
 import {
   defaultLanguage,
   defaultNamespace,
   type SupportedLanguage,
   supportedLanguageCodes,
   supportedLanguageCodesArray,
-} from "@pgko-dev/i18n";
-import { languageResources } from "@pgko-dev/i18n/all";
+} from "@pgko.dev/i18n";
+import { languageResources } from "@pgko.dev/i18n/all";
 
 function detectBrowserLanguage(): SupportedLanguage | undefined {
   try {

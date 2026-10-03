@@ -17,8 +17,8 @@ import type {
   SignInBody,
   SignUpBody,
   UpdateProfileBody as UpdateProfileBodyType,
-} from "@pgko-dev/schema";
-import { AuthMeResponseSchema, CommonSuccessSchema } from "@pgko-dev/schema";
+} from "@pgko.dev/schema";
+import { AuthMeResponseSchema, CommonSuccessSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api.ts";
 import { handleApiError } from "@/lib/parse-error";

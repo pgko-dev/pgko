@@ -1,8 +1,8 @@
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 
-import type { UserListQuery } from "@pgko-dev/schema";
-import { UserListResponseSchema } from "@pgko-dev/schema";
+import type { UserListQuery } from "@pgko.dev/schema";
+import { UserListResponseSchema } from "@pgko.dev/schema";
 
 import { apiClient } from "@/lib/api.ts";
 import { QUERY_KEYS } from "@/lib/query-keys.ts";

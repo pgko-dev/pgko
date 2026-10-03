@@ -2,8 +2,8 @@ import { RotateCcw } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { UserRules } from "@pgko-dev/config";
-import { tConfirmPasswordSchema, tOtpSchema, tRegisterPasswordSchema } from "@pgko-dev/schema";
+import { UserRules } from "@pgko.dev/config";
+import { tConfirmPasswordSchema, tOtpSchema, tRegisterPasswordSchema } from "@pgko.dev/schema";
 
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";

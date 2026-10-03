@@ -1,5 +1,5 @@
 {
-  "name": "@pgko-dev/openapi",
+  "name": "@pgko.dev/openapi",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "catalog:",
-    "@pgko-dev/tsconfig": "workspace:*",
+    "@pgko.dev/tsconfig": "workspace:*",
     "@scalar/api-reference": "catalog:",
     "@types/bun": "catalog:",
     "oxfmt": "catalog:",

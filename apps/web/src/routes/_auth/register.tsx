@@ -3,13 +3,13 @@ import { AtSign, User, UserPlus } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { UserRules } from "@pgko-dev/config";
+import { UserRules } from "@pgko.dev/config";
 import {
   tConfirmPasswordSchema,
   tEmailSchema,
   tNameSchema,
   tRegisterPasswordSchema,
-} from "@pgko-dev/schema";
+} from "@pgko.dev/schema";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

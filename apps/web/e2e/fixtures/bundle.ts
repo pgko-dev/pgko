@@ -1,4 +1,4 @@
-import type { BundlePublicDetail, SongSummary } from "@pgko-dev/schema";
+import type { BundlePublicDetail, SongSummary } from "@pgko.dev/schema";
 
 export const bundleId = "00000000-0000-4000-8000-000000000001";
 export const songs: SongSummary[] = Array.from({ length: 24 }, (_, index) => ({

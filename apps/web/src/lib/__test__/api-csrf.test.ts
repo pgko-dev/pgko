@@ -9,7 +9,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
-import { Common } from "@pgko-dev/config";
+import { Common } from "@pgko.dev/config";
 
 import { installCsrfInterceptors } from "../api-csrf";
 
