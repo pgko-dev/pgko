@@ -120,12 +120,10 @@ export function PortraitViewport({
             onPan();
             const element = event.currentTarget;
             const step = event.key.startsWith("Page") ? size.height * 0.8 : 48;
-            const target =
-              event.key === "Home"
-                ? view.scrollRange
-                : event.key === "End"
-                  ? 0
-                  : element.scrollTop + (["ArrowUp", "PageUp"].includes(event.key) ? -step : step);
+            const delta = ["ArrowUp", "PageUp"].includes(event.key) ? -step : step;
+            let target = element.scrollTop + delta;
+            if (event.key === "Home") target = view.scrollRange;
+            else if (event.key === "End") target = 0;
             element.scrollTo({ top: target, behavior: "instant" });
           }
         }}
@@ -168,6 +166,7 @@ export function PortraitViewport({
             <canvas
               ref={canvas}
               aria-hidden="true"
+              tabIndex={-1}
               data-column="0"
               style={{ display: "block", width: size.width, height: size.height }}
             />

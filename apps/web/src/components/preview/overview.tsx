@@ -87,7 +87,9 @@ export function OverviewViewport({
       if (event.ctrlKey || element.scrollWidth <= element.clientWidth) return;
       const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
       if (!delta) return;
-      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientWidth : 1;
+      let unit = 1;
+      if (event.deltaMode === 1) unit = 16;
+      else if (event.deltaMode === 2) unit = element.clientWidth;
       event.preventDefault();
       onPan();
       element.scrollBy({

@@ -72,10 +72,9 @@ export default function Preview({
       .catch((reason: unknown) => {
         if (controller.signal.aborted) return;
         const timedOut = reason instanceof DOMException && reason.name === "TimeoutError";
+        const fallbackCode = timedOut ? "timeout" : "network";
         const error =
-          reason instanceof PreviewLoadError
-            ? reason
-            : new PreviewLoadError(timedOut ? "timeout" : "network");
+          reason instanceof PreviewLoadError ? reason : new PreviewLoadError(fallbackCode);
         if (error.code === "revision") onRevisionChange();
         else setResult({ identity, error });
       });

@@ -331,19 +331,7 @@ class ChartReader {
       note.effect = payload[3] ?? "A";
     }
 
-    if (PAIRED_TYPES.has(kind) && note.color !== "N" && note.color !== "I") {
-      this.report("warning", "color", row.line, "Unsupported air color; normal color is used.");
-      note.color = "N";
-    }
-    if (kind === "airCrush" && !CRUSH_COLORS.has(note.color)) {
-      this.report(
-        "warning",
-        "color",
-        row.line,
-        "Unsupported air-crush color; normal color is used.",
-      );
-      note.color = "0";
-    }
+    this.validateColor(row, note);
     if (payload.length > expectedLength || (suffix !== undefined && kind !== "airCrush")) {
       this.report(
         "warning",
@@ -351,6 +339,22 @@ class ChartReader {
         row.line,
         "Unsupported appearance attributes were omitted.",
       );
+    }
+  }
+
+  private validateColor(row: Row, note: ChartNote) {
+    if (PAIRED_TYPES.has(note.kind) && note.color !== "N" && note.color !== "I") {
+      this.report("warning", "color", row.line, "Unsupported air color; normal color is used.");
+      note.color = "N";
+    }
+    if (note.kind === "airCrush" && !CRUSH_COLORS.has(note.color)) {
+      this.report(
+        "warning",
+        "color",
+        row.line,
+        "Unsupported air-crush color; normal color is used.",
+      );
+      note.color = "0";
     }
   }
 

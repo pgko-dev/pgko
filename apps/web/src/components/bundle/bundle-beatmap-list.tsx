@@ -166,9 +166,9 @@ export function BundleBeatmapList({
             ))}
           </ul>
           {!matches.length ? (
-            <p role="status" className="p-4 text-sm text-muted-foreground">
+            <output className="block p-4 text-sm text-muted-foreground">
               {t("ui.bundlePage.noMatchingBeatmaps")}
-            </p>
+            </output>
           ) : null}
         </ScrollAreaViewport>
         <ScrollBar />

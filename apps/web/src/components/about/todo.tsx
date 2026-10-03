@@ -1,6 +1,6 @@
 import { Checkbox } from "@/components/ui/checkbox";
 
-export function Todo({ todoItems }: { todoItems: string[] }) {
+export function Todo({ todoItems }: Readonly<{ todoItems: readonly string[] }>) {
   return (
     <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
       {todoItems.map((item) => (
