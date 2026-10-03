@@ -64,6 +64,21 @@ const beatmap = [
 
 async function open(page: Page, source = beatmap) {
   await page.addInitScript(() => {
+    // Retained canvases must use one raster backend throughout repeated pixel reads.
+    // oxlint-disable-next-line typescript/unbound-method -- Called below with the original canvas as its receiver.
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (
+      this: HTMLCanvasElement,
+      contextId: string,
+      options?: CanvasRenderingContext2DSettings,
+    ) {
+      return getContext.call(
+        this,
+        contextId,
+        contextId === "2d" ? { ...options, willReadFrequently: true } : options,
+      );
+    } as HTMLCanvasElement["getContext"];
+
     const capture = window as unknown as TextCapture;
     capture.previewText = new WeakMap();
     // oxlint-disable-next-line typescript/unbound-method -- Called below with the original canvas context as its receiver.
