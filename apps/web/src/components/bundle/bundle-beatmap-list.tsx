@@ -23,6 +23,9 @@ type Props = {
   scrollPosition: RefObject<number>;
 };
 
+const actionButtonClassName =
+  "size-11 hover:bg-foreground/10 sm:size-6 dark:hover:bg-foreground/10 pointer-coarse:size-11";
+
 export function BundleBeatmapList({
   songs,
   selectedId,
@@ -130,7 +133,7 @@ export function BundleBeatmapList({
                     <Button
                       variant={playingId === song.id ? "secondary" : "ghost"}
                       size="icon-xs"
-                      className="size-11 sm:size-6 pointer-coarse:size-11"
+                      className={actionButtonClassName}
                       aria-label={`${t("ui.uploadDetail.song.playPreview")}: ${song.title}`}
                       aria-pressed={playingId === song.id}
                       title={t("ui.uploadDetail.song.playPreview")}
@@ -150,7 +153,7 @@ export function BundleBeatmapList({
                       rel="noopener noreferrer"
                       className={cn(
                         buttonVariants({ variant: "ghost", size: "icon-xs" }),
-                        "size-11 sm:size-6 pointer-coarse:size-11",
+                        actionButtonClassName,
                       )}
                       aria-label={`${t("ui.bundlePage.videoLink")}: ${song.title}`}
                       title={t("ui.bundlePage.videoLink")}

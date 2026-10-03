@@ -63,6 +63,44 @@ function row(page: Page, number: number) {
   });
 }
 
+for (const theme of ["light", "dark"]) {
+  test(`selected beatmap actions retain independent hover feedback in ${theme} theme`, async ({
+    page,
+  }, info) => {
+    test.skip(Boolean(info.project.use.isMobile), "Hover feedback needs a mouse pointer.");
+    await page.addInitScript((value) => localStorage.setItem("preview-test-theme", value), theme);
+    await setup(page);
+    const selected = row(page, 1);
+    await selected.click();
+    await expect(selected).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+
+    for (const action of [
+      page.getByRole("button", { name: "Play preview: Beatmap 01", exact: true }),
+      page.getByRole("link", { name: "Video: Beatmap 01", exact: true }),
+    ]) {
+      await selected.hover();
+      await action.hover();
+      // Compare composited colors: a translucent muted background can be
+      // syntactically different yet visually identical to the selected row.
+      await expect
+        .poll(() =>
+          action.evaluate((element) => {
+            const context = document.createElement("canvas").getContext("2d")!;
+            context.fillStyle = getComputedStyle(element.closest("li")!).backgroundColor;
+            context.fillRect(0, 0, 1, 1);
+            const rowColor = [...context.getImageData(0, 0, 1, 1).data];
+            context.fillStyle = getComputedStyle(element).backgroundColor;
+            context.fillRect(0, 0, 1, 1);
+            const actionColor = [...context.getImageData(0, 0, 1, 1).data];
+            return actionColor.some((channel, index) => Math.abs(channel - rowColor[index]) > 3);
+          }),
+        )
+        .toBe(true);
+    }
+  });
+}
+
 test("split page keeps controls visible while browsing, searching and switching beatmaps", async ({
   page,
 }, info) => {
