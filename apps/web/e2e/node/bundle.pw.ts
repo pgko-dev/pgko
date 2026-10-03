@@ -145,15 +145,15 @@ test("loads on demand, preserves video links, renders columns and follows playba
     .toBeGreaterThan(1);
   await setZoom(page, 1);
   const field = page.getByRole("region", { name: /Beatmap columns/ });
+  const beforeSeek = await field.evaluate((element) => ({
+    left: element.scrollLeft,
+    top: element.scrollTop,
+  }));
   await page.getByRole("slider", { name: "Playback position" }).focus();
   await page.keyboard.press("End");
-  if (info.project.use.isMobile) {
-    await expect(field).toHaveAttribute("data-portrait", "true");
-    await expect.poll(() => field.evaluate((element) => element.scrollTop)).toBe(0);
-    await expect(field.locator('[data-slot="preview-cursor"]')).toBeInViewport();
-  } else {
-    await expect.poll(() => field.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
-  }
+  expect(
+    await field.evaluate((element) => ({ left: element.scrollLeft, top: element.scrollTop })),
+  ).toEqual(beforeSeek);
   await field.hover();
   if (info.project.use.isMobile) {
     const bounds = (await field.boundingBox())!;
@@ -173,10 +173,7 @@ test("loads on demand, preserves video links, renders columns and follows playba
   } else {
     await page.mouse.wheel(300, 0);
   }
-  await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
+  await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Close preview" }).click();
   await expect(page.locator("canvas")).toHaveCount(0);
   expect(errors).toEqual([]);

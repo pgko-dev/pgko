@@ -1,11 +1,8 @@
-import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { SongSummary } from "@pgko-dev/schema";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader } from "@/components/ui/card";
 import { loadWithTimeout } from "@/lib/preview/load-timeout";
 import {
   musicUrlFor,
@@ -115,39 +112,24 @@ export default function Preview({
     );
 
   if (!error)
-    return <PreviewPlaceholder message={t("ui.preview.loading")} loading onClose={onClose} />;
+    return (
+      <PreviewPlaceholder
+        message={t("ui.preview.loading")}
+        state="loading"
+        onClose={onClose}
+        fitContainer={fitContainer}
+      />
+    );
 
   return (
-    <section
-      aria-label={t("ui.preview.title")}
-      className={fitContainer ? "min-h-0 md:h-full" : undefined}
+    <PreviewPlaceholder
+      message={t(`ui.preview.errors.${error.code}`)}
+      state="error"
+      onClose={onClose}
+      onRetry={() => setAttempt((value) => value + 1)}
+      fitContainer={fitContainer}
     >
-      <Card className={fitContainer ? "md:h-full md:overflow-y-auto" : undefined}>
-        <CardHeader>
-          <h3 className="font-semibold">
-            {song.title} · {t("ui.preview.title")}
-          </h3>
-          <CardAction>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onClose}
-              aria-label={t("ui.preview.close")}
-            >
-              <X />
-            </Button>
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          <output className="block py-4 text-sm text-muted-foreground">
-            {t(`ui.preview.errors.${error.code}`)}
-          </output>
-          <Button variant="outline" onClick={() => setAttempt((value) => value + 1)}>
-            {t("ui.preview.retry")}
-          </Button>
-          {error.diagnostics.length ? <PreviewDiagnostics diagnostics={error.diagnostics} /> : null}
-        </CardContent>
-      </Card>
-    </section>
+      {error.diagnostics.length ? <PreviewDiagnostics diagnostics={error.diagnostics} /> : null}
+    </PreviewPlaceholder>
   );
 }

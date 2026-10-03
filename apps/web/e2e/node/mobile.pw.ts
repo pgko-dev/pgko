@@ -70,7 +70,6 @@ test("portrait scrolls one continuous track vertically and seeks at an independe
   const field = await open(page);
   const player = page.getByRole("region", { name: "Beatmap preview", exact: true });
   const position = page.getByRole("slider", { name: "Playback position" });
-  const follow = page.getByRole("button", { name: "Follow", exact: true });
   await expectFit(field);
   await expectCursor(field);
   const range = await field.evaluate((element) => element.scrollHeight - element.clientHeight);
@@ -78,7 +77,7 @@ test("portrait scrolls one continuous track vertically and seeks at an independe
   const bounds = (await field.boundingBox())!;
   await field.click({ position: { x: bounds.width / 2, y: bounds.height - 48 - 48 } });
   await expect.poll(async () => Number(await position.inputValue())).toBeCloseTo(0.5, 1);
-  await expectCursor(field);
+  expect(await field.evaluate((element) => element.scrollTop)).toBeCloseTo(range, 0);
   const before = await position.inputValue();
   const top = await field.evaluate((element) => element.scrollTop);
 
@@ -90,7 +89,6 @@ test("portrait scrolls one continuous track vertically and seeks at an independe
   });
   await page.mouse.up();
   await expect.poll(() => field.evaluate((element) => element.scrollTop)).toBeLessThan(top - 100);
-  await expect(follow).toHaveAttribute("aria-pressed", "false");
   await expect(position).toHaveValue(before);
   await expectFit(field);
 
@@ -115,21 +113,24 @@ test("portrait scrolls one continuous track vertically and seeks at an independe
   await expect(
     player.locator('[data-slot="scroll-area-scrollbar"][data-orientation="horizontal"]'),
   ).toHaveCount(0);
-  await follow.click();
-  await expectCursor(field);
+  await field.focus();
+  await page.keyboard.press("Home");
 
   await setZoom(page, 1);
-  await expectCursor(field);
   await expect
     .poll(() => field.evaluate((element) => element.scrollHeight - element.clientHeight))
     .toBeCloseTo(range * 2, 0);
-  await field.click({ position: { x: bounds.width / 2, y: bounds.height - 48 - 96 } });
+  await field.click({ position: { x: bounds.width / 2, y: bounds.height - 48 - 192 } });
   await expect.poll(async () => Number(await position.inputValue())).toBeCloseTo(1, 1);
-  await expectCursor(field);
+
+  await setZoom(page, 0.5);
+  await expect.poll(() => field.evaluate((element) => element.scrollTop)).toBeCloseTo(range, 0);
+  await setZoom(page, 1);
+  await expect.poll(() => field.evaluate((element) => element.scrollTop)).toBeCloseTo(range * 2, 0);
 
   await page.setViewportSize({ width: 320, height: 740 });
   await expectFit(field);
-  await expectCursor(field);
+  await expect.poll(() => field.evaluate((element) => element.scrollTop)).toBeCloseTo(range * 2, 0);
   expect(await player.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
   const controls = player.locator('[data-slot="preview-controls"]');
   expect(await controls.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
@@ -140,11 +141,8 @@ test("portrait scrolls one continuous track vertically and seeks at an independe
       Math.abs(bounds.x + bounds.width / 2 - (controlsBounds.x + controlsBounds.width / 2)),
     ).toBeLessThan(1);
   }
-  await player.screenshot({ path: info.outputPath("portrait-mobile.png") });
-  await expectCursor(field);
-  await expect
-    .poll(() => field.evaluate((element) => element.scrollTop))
-    .toBeCloseTo(range * 2 - 192, 0);
+  await page.screenshot({ path: info.outputPath("portrait-mobile.png") });
+  await expect.poll(() => field.evaluate((element) => element.scrollTop)).toBeCloseTo(range * 2, 0);
   await page.getByRole("button", { name: "Close preview" }).click();
   await expect(page.locator("canvas")).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -161,6 +159,8 @@ test("rotation, view switching and fullscreen preserve playback and vertical fol
   await position.focus();
   await page.keyboard.press("End");
   await expect(position).toHaveValue("64");
+  await field.focus();
+  await page.keyboard.press("End");
   const inlineHeight = (await field.boundingBox())!.height;
   await expectFit(field);
   await expectCursor(field);
@@ -218,7 +218,6 @@ test("native vertical touch swipes pan without seeking and playback follows cont
   );
   const field = await open(page, source.replace("120", "960"));
   const position = page.getByRole("slider", { name: "Playback position" });
-  const follow = page.getByRole("button", { name: "Follow", exact: true });
   await field.scrollIntoViewIfNeeded();
   const bounds = (await field.boundingBox())!;
   const initialTop = await field.evaluate((element) => element.scrollTop);
@@ -242,15 +241,23 @@ test("native vertical touch swipes pan without seeking and playback follows cont
     .poll(() => field.evaluate((element) => element.scrollTop))
     .toBeLessThan(initialTop - 100);
   await expect(position).toHaveValue("0");
-  await expect(follow).toHaveAttribute("aria-pressed", "false");
-  await follow.click();
-  await expectCursor(field);
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect
     .poll(() => field.evaluate((element) => element.scrollTop))
     .toBeLessThan(initialTop - 600);
   await expectCursor(field);
   await expectFit(field);
+
+  await session.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x, y: start }],
+  });
+  await session.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x, y: start + distance }],
+  });
+  await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expectCursor(field);
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   await session.detach();
 });
@@ -282,7 +289,6 @@ test("portrait reuses note colors and preserves long-note gradients while scroll
   const color = await readColor(y);
   expect(Math.max(...color) - Math.min(...color)).toBeGreaterThan(30);
   await field.screenshot({ path: info.outputPath("portrait-notes.png") });
-  await page.getByRole("button", { name: "Follow", exact: true }).click();
   await field.evaluate((element) => {
     element.scrollTop -= 192;
   });

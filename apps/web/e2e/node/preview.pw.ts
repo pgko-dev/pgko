@@ -2,7 +2,15 @@ import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 
 import { expect, test, type Page } from "@playwright/test";
-import { CONTENT_HEIGHT, FIELD_HEIGHT, FIELD_LEFT, NOTE_PADDING, PREVIEW_ZOOMS } from "ugc-render";
+import {
+  COLUMN_WIDTH,
+  CONTENT_HEIGHT,
+  FIELD_HEIGHT,
+  FIELD_LEFT,
+  FIELD_WIDTH,
+  NOTE_PADDING,
+  PREVIEW_ZOOMS,
+} from "ugc-render";
 
 import { wave } from "./audio";
 import { setPortrait, setZoom } from "./view";
@@ -182,20 +190,10 @@ test("renders columns, follows playback and releases canvases", async ({ page },
   ).toBeGreaterThan(1);
   await setZoom(page, 1);
   const field = page.getByRole("region", { name: /Beatmap columns/ });
+  const beforeSeek = await field.evaluate((element) => element.scrollLeft);
   await page.getByRole("slider", { name: "Playback position" }).focus();
   await page.keyboard.press("End");
-  await expect.poll(() => field.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
-  await expect
-    .poll(() =>
-      field.evaluate((element) => {
-        const cursor = element
-          .querySelector('[data-slot="preview-cursor"]')!
-          .getBoundingClientRect();
-        const bounds = element.getBoundingClientRect();
-        return cursor.left >= bounds.left && cursor.right <= bounds.right;
-      }),
-    )
-    .toBe(true);
+  expect(await field.evaluate((element) => element.scrollLeft)).toBe(beforeSeek);
   await field.hover();
   if (info.project.use.isMobile) {
     const bounds = (await field.boundingBox())!;
@@ -215,10 +213,7 @@ test("renders columns, follows playback and releases canvases", async ({ page },
   } else {
     await page.mouse.wheel(300, 0);
   }
-  await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
+  await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Close preview" }).click();
   await expect(page.locator("canvas")).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -319,80 +314,192 @@ test("music stays aligned when starting mid-beatmap, seeking and restarting", as
   await assertAligned();
 });
 
-test("follow keeps the cursor visible and wheel scrolling can be restored", async ({
-  page,
-}, info) => {
+for (const portrait of [false, true]) {
+  test(`chart seeking and scrolling are locked only during playback in portrait ${portrait}`, async ({
+    page,
+  }, info) => {
+    await audioRoutes(page);
+    await page.goto("/e2e/browser/preview.html");
+    await page.getByLabel("Beatmap (.ugc)").setInputFiles({
+      name: "playback-lock.ugc",
+      mimeType: "text/plain",
+      buffer: Buffer.from("@BPM\t0'0\t120\n#31'0:t04"),
+    });
+    await page.getByRole("button", { name: "Load local files" }).click();
+    await setPortrait(page, portrait);
+    await setZoom(page, 1);
+
+    const field = page.getByRole("region", { name: /Beatmap columns/ });
+    const position = page.getByRole("slider", { name: "Playback position" });
+    const next = page.getByRole("button", { name: "Next bar" });
+    const root = field.locator("..");
+    const readScroll = () =>
+      field.evaluate((element) => ({ left: element.scrollLeft, top: element.scrollTop }));
+    const initialScroll = await readScroll();
+    for (let bar = 0; bar < 4; bar++) await next.click();
+    await expect(position).toHaveValue("8");
+    expect(await readScroll()).toEqual(initialScroll);
+    await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveCount(0);
+    const settings = page.getByRole("button", { name: "Preview settings", exact: true });
+    expect(
+      await settings.evaluate((element) =>
+        element.previousElementSibling?.getAttribute("aria-label"),
+      ),
+    ).toBe("Next bar");
+
+    test.skip(
+      await page.evaluate(() => typeof AudioContext === "undefined"),
+      "This WebKit runtime lacks Web Audio.",
+    );
+    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await expect(root).toHaveAttribute("data-playing", "true");
+    await expect.poll(readScroll).not.toEqual(initialScroll);
+    expect(await field.evaluate((element) => getComputedStyle(element).overflow)).toBe("hidden");
+
+    const before = Number(await position.inputValue());
+    await settings.click();
+    const portraitSetting = page.getByRole("checkbox", { name: "Portrait view" });
+    await expect(portraitSetting).toBeVisible();
+    if (info.project.use.isMobile) await field.tap({ position: { x: 80, y: 100 } });
+    else await field.click({ position: { x: 80, y: 100 } });
+    await expect(portraitSetting).toBeHidden();
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+    await field.focus();
+    for (const key of ["PageUp", "PageDown", "Home", "End"]) await page.keyboard.press(key);
+    const wheelBlocked = await field.evaluate((element) => {
+      const event = new WheelEvent("wheel", {
+        deltaX: -2000,
+        deltaY: -2000,
+        bubbles: true,
+        cancelable: true,
+      });
+      element.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+    expect(wheelBlocked).toBe(true);
+    const scrollbar = root.locator(
+      `[data-slot="scroll-area-scrollbar"][data-orientation="${portrait ? "vertical" : "horizontal"}"]`,
+    );
+    await expect(scrollbar).toHaveAttribute("aria-disabled", "true");
+    const scrollbarBlocked = await scrollbar.evaluate((element) => {
+      const event = new PointerEvent("pointerdown", {
+        pointerId: 2,
+        pointerType: "mouse",
+        button: 0,
+        bubbles: true,
+        cancelable: true,
+      });
+      element.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+    expect(scrollbarBlocked).toBe(true);
+    expect(
+      await scrollbar.evaluate((element) => {
+        const before = element.parentElement!.querySelector('[role="region"]')!;
+        const initial = { left: before.scrollLeft, top: before.scrollTop };
+        const event = new WheelEvent("wheel", {
+          deltaX: -2000,
+          deltaY: -2000,
+          bubbles: true,
+          cancelable: true,
+        });
+        element.dispatchEvent(event);
+        return (
+          event.defaultPrevented &&
+          before.scrollLeft === initial.left &&
+          before.scrollTop === initial.top
+        );
+      }),
+    ).toBe(true);
+    const after = Number(await position.inputValue());
+    expect(after).toBeGreaterThanOrEqual(before);
+    expect(after - before).toBeLessThan(2);
+
+    await page.getByRole("button", { name: "Pause", exact: true }).click();
+    await expect(root).toHaveAttribute("data-playing", "false");
+    const pausedScroll = await readScroll();
+    await next.click();
+    expect(await readScroll()).toEqual(pausedScroll);
+    await field.focus();
+    if (portrait) await page.keyboard.press("PageUp");
+    else await field.dispatchEvent("wheel", { deltaX: -1000, deltaMode: 0 });
+    await expect.poll(readScroll).not.toEqual(pausedScroll);
+    await page.getByRole("button", { name: "Restart", exact: true }).click();
+    await field.focus();
+    await page.keyboard.press("Home");
+    const bounds = (await field.boundingBox())!;
+    await field.click({
+      position: { x: portrait ? bounds.width / 2 : FIELD_LEFT * 0.5 + 10, y: bounds.height - 96 },
+    });
+    await expect(position).not.toHaveValue("0");
+  });
+}
+
+test("follow scrolls linearly within columns and across their boundaries", async ({ page }) => {
   await audioRoutes(page);
   await page.goto("/e2e/browser/preview.html");
   await page.getByLabel("Beatmap (.ugc)").setInputFiles({
-    name: "follow.ugc",
+    name: "linear-follow.ugc",
     mimeType: "text/plain",
-    buffer: Buffer.from("@BPM\t0'0\t960\n#31'0:t04"),
+    buffer: Buffer.from("@BPM\t0'0\t240\n#31'0:t04"),
   });
   await page.getByRole("button", { name: "Load local files" }).click();
   await setPortrait(page, false);
   await setZoom(page, 1);
+
   const field = page.getByRole("region", { name: /Beatmap columns/ });
-  const next = page.getByRole("button", { name: "Next bar" });
-  const cursor = page.locator('[data-slot="preview-cursor"]');
-  const assertVisible = async () => {
-    await expect
-      .poll(() =>
-        cursor.evaluate((element) => {
-          const cursor = element.getBoundingClientRect();
-          const bounds = element
-            .closest('[data-slot="scroll-area-viewport"]')!
-            .getBoundingClientRect();
-          return (
-            cursor.top >= bounds.top &&
-            cursor.bottom <= bounds.bottom &&
-            cursor.right > bounds.left &&
-            cursor.left < bounds.right
-          );
-        }),
-      )
-      .toBe(true);
-  };
-  for (let bar = 0; bar < 4; bar++) {
-    await next.click();
-    await assertVisible();
-  }
-  expect(await field.evaluate((element) => element.scrollTop)).toBe(0);
-  const scrollbar = page.locator(
-    '[data-slot="scroll-area-scrollbar"][data-orientation="horizontal"]',
-  );
-  await expect(scrollbar).toBeVisible();
-  await scrollbar.dispatchEvent("pointerdown", { pointerId: 2, pointerType: "mouse", button: 0 });
-  await scrollbar.dispatchEvent("pointerup", { pointerId: 2, pointerType: "mouse", button: 0 });
-  const follow = page.getByRole("button", { name: "Follow", exact: true });
-  await expect(follow).toHaveAttribute("aria-pressed", "false");
-  await field.evaluate((element) => {
-    element.scrollLeft = 0;
-  });
-  await next.click();
-  expect(await field.evaluate((element) => element.scrollLeft)).toBe(0);
-  await follow.click();
-  await assertVisible();
-  for (let bar = 0; bar < 12; bar++) await next.click();
-  await assertVisible();
-  expect(await field.evaluate((element) => element.scrollLeft)).toBeGreaterThan(300);
-  await page.getByRole("button", { name: "Restart", exact: true }).click();
-  await assertVisible();
   const position = page.getByRole("slider", { name: "Playback position" });
-  const before = await position.inputValue();
-  await field.hover();
-  await field.dispatchEvent("wheel", { deltaY: 300, deltaMode: 0 });
-  await expect.poll(() => field.evaluate((element) => element.scrollLeft)).toBeGreaterThan(200);
-  await expect(follow).toHaveAttribute("aria-pressed", "false");
-  await expect(position).toHaveValue(before);
-  await field.dispatchEvent("wheel", { deltaY: -300, deltaMode: 0 });
-  await expect.poll(() => field.evaluate((element) => element.scrollLeft)).toBe(0);
-  await follow.click();
-  await field.screenshot({ path: info.outputPath("follow.png") });
-  if (await page.evaluate(() => typeof AudioContext !== "undefined")) {
-    await page.getByRole("button", { name: "Play", exact: true }).click();
-    await expect.poll(() => field.evaluate((element) => element.scrollLeft)).toBeGreaterThan(500);
-    await assertVisible();
+  const next = page.getByRole("button", { name: "Next bar" });
+  const columnWidth = COLUMN_WIDTH * 0.5;
+  const focusOffset = await field.evaluate(
+    (element, geometry) =>
+      element.clientWidth * 0.382 - geometry.cursorCenter + geometry.columnWidth / 2,
+    { cursorCenter: (FIELD_LEFT + FIELD_WIDTH / 2) * 0.5, columnWidth },
+  );
+
+  for (let bar = 0; bar < 3; bar++) await next.click();
+  await expect(position).toHaveValue("3");
+  expect(await field.evaluate((element) => element.scrollLeft)).toBe(0);
+
+  test.skip(
+    await page.evaluate(() => typeof AudioContext === "undefined"),
+    "This WebKit runtime lacks Web Audio.",
+  );
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+
+  const samples = await field.evaluate(async (element) => {
+    const slider = document.querySelector<HTMLInputElement>('[aria-label="Playback position"]')!;
+    const samples: { position: number; left: number; cursorVisible: boolean }[] = [];
+    const started = performance.now();
+    while (performance.now() - started < 1400) {
+      await new Promise(requestAnimationFrame);
+      const bounds = element.getBoundingClientRect();
+      const cursor = element.querySelector('[data-slot="preview-cursor"]')!.getBoundingClientRect();
+      samples.push({
+        position: Number(slider.value),
+        left: element.scrollLeft,
+        cursorVisible: cursor.right > bounds.left && cursor.left < bounds.right,
+      });
+    }
+    return samples;
+  });
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+
+  expect(samples.some((sample) => sample.position < 4)).toBe(true);
+  expect(samples.some((sample) => sample.position >= 4)).toBe(true);
+  expect(samples.every((sample) => sample.cursorVisible)).toBe(true);
+  expect(samples.at(-1)!.left - samples[0].left).toBeGreaterThan(columnWidth / 2);
+  for (const sample of samples) {
+    // At 100%, each column packs two bars; equal time advances by equal distances.
+    expect(
+      Math.abs(sample.left - ((sample.position / 2) * columnWidth - focusOffset)),
+    ).toBeLessThan(2);
+  }
+  for (let index = 1; index < samples.length; index++) {
+    const distance = samples[index].left - samples[index - 1].left;
+    expect(distance).toBeGreaterThanOrEqual(0);
+    expect(distance).toBeLessThan(columnWidth / 4);
   }
 });
 

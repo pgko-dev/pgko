@@ -114,6 +114,7 @@ export function BundleBeatmaps({
         ) : (
           <PreviewPlaceholder
             message={t(songs.length ? "ui.bundlePage.selectBeatmap" : "ui.bundlePage.noBeatmaps")}
+            fitContainer
           />
         )}
       </div>

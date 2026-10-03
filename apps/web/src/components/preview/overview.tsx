@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CANVAS_HEIGHT,
   COLUMN_WIDTH,
@@ -13,27 +13,23 @@ import {
 } from "ugc-render";
 import { ChartPainter } from "ugc-render/canvas";
 
-import {
-  ScrollAreaCorner,
-  ScrollAreaRoot,
-  ScrollAreaViewport,
-  ScrollBar,
-} from "@/components/ui/scroll-area";
+import { ScrollAreaCorner, ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
+import { PreviewScrollArea } from "./scroll-area";
 import type { PreviewViewportProps } from "./viewport";
 
 const MAX_SURFACE_BYTES = 64 * 1024 * 1024;
 const OVERVIEW_SCALE = 0.5;
 const MIN_CANVAS_HEIGHT = NOTE_PADDING * 2 + LOOK_AHEAD + 1;
+const PLAYBACK_FOCUS = 0.382;
 
 export function OverviewViewport({
   chart,
   zoom,
   expanded,
   tick,
-  follow,
-  onPan,
+  playing,
   onSeek,
   label,
   options,
@@ -57,7 +53,6 @@ export function OverviewViewport({
     () => createLayout(chart, zoom, Math.max(MIN_CANVAS_HEIGHT, window.height / scale)),
     [chart, zoom, window.height, scale],
   );
-  const previousLayout = useRef(layout);
   const painter = useMemo(() => new ChartPainter(chart, layout), [chart, layout]);
   const columnWidth = COLUMN_WIDTH * scale;
   const first = Math.max(0, Math.floor(window.left / columnWidth) - 1);
@@ -84,6 +79,7 @@ export function OverviewViewport({
   useEffect(() => {
     const element = scroll.current!;
     const wheel = (event: WheelEvent) => {
+      if (playing) return;
       if (event.ctrlKey || element.scrollWidth <= element.clientWidth) return;
       const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
       if (!delta) return;
@@ -91,7 +87,6 @@ export function OverviewViewport({
       if (event.deltaMode === 1) unit = 16;
       else if (event.deltaMode === 2) unit = element.clientWidth;
       event.preventDefault();
-      onPan();
       element.scrollBy({
         left: delta * unit,
         behavior: "instant",
@@ -99,7 +94,7 @@ export function OverviewViewport({
     };
     element.addEventListener("wheel", wheel, { passive: false });
     return () => element.removeEventListener("wheel", wheel);
-  }, [onPan]);
+  }, [playing]);
 
   useEffect(() => {
     const host = tiles.current!;
@@ -143,34 +138,27 @@ export function OverviewViewport({
     };
   }, [painter, layout, first, last, columnWidth, scale, options]);
 
-  useEffect(() => {
-    const reflowed = previousLayout.current !== layout;
-    previousLayout.current = layout;
-    if (!follow && !reflowed) return;
+  useLayoutEffect(() => {
+    if (!playing) return;
+
     const element = scroll.current!;
-    const left = active.index * columnWidth;
-    const fieldLeft = left + FIELD_LEFT * scale;
-    const fieldWidth = FIELD_WIDTH * scale;
-    let targetLeft = element.scrollLeft;
-    if (
-      fieldLeft < element.scrollLeft ||
-      fieldLeft + Math.min(fieldWidth, element.clientWidth) >
-        element.scrollLeft + element.clientWidth
-    ) {
-      targetLeft = Math.max(
-        0,
-        left - Math.min(columnWidth, Math.max(0, element.clientWidth - columnWidth)),
-      );
-    }
+    const progress = Math.max(
+      0,
+      Math.min(1, (tick - active.startTick) / (active.packedEndTick - active.startTick)),
+    );
+    // Center the cursor's sweep around the playback focus while scrolling linearly.
+    const cursorCenter = (FIELD_LEFT + FIELD_WIDTH / 2) * scale;
+    const focusOffset = element.clientWidth * PLAYBACK_FOCUS - cursorCenter + columnWidth / 2;
+    const targetLeft = Math.max(0, (active.index + progress) * columnWidth - focusOffset);
 
     if (targetLeft !== element.scrollLeft) {
-      // Follow only this viewport; instant movement also respects reduced motion.
       element.scrollTo({ left: targetLeft, behavior: "instant" });
     }
-  }, [active, follow, columnWidth, layout, window.width, scale]);
+  }, [active, tick, playing, columnWidth, window.width, scale]);
 
   return (
-    <ScrollAreaRoot
+    <PreviewScrollArea
+      playing={playing}
       className={cn("min-w-0 overflow-hidden rounded-lg bg-black", expanded && "min-h-40 flex-1")}
       style={{
         height: expanded ? undefined : CANVAS_HEIGHT * OVERVIEW_SCALE,
@@ -183,6 +171,7 @@ export function OverviewViewport({
         aria-label={label}
         data-portrait="false"
         className="absolute inset-0 [touch-action:pan-x_pan-y] overscroll-contain"
+        style={playing ? { overflow: "hidden", touchAction: "none" } : undefined}
         onScroll={() => {
           const element = scroll.current!;
           setWindow((previous) => ({
@@ -191,23 +180,8 @@ export function OverviewViewport({
             width: element.clientWidth,
           }));
         }}
-        onKeyDown={(event) => {
-          if (
-            [
-              "ArrowLeft",
-              "ArrowRight",
-              "ArrowUp",
-              "ArrowDown",
-              "PageUp",
-              "PageDown",
-              "Home",
-              "End",
-            ].includes(event.key)
-          ) {
-            onPan();
-          }
-        }}
         onPointerDown={(event) => {
+          if (playing) return;
           drag.current = {
             x: event.clientX,
             y: event.clientY,
@@ -220,24 +194,23 @@ export function OverviewViewport({
           }
         }}
         onPointerMove={(event) => {
+          if (playing) return;
           const current = drag.current;
           if (current?.pointer !== event.pointerId) return;
           if (Math.hypot(event.clientX - current.x, event.clientY - current.y) > 6) {
             current.moved = true;
-            onPan();
             if (event.pointerType === "mouse") {
               scroll.current!.scrollLeft = current.left + current.x - event.clientX;
             }
           }
         }}
         onPointerCancel={() => {
-          if (drag.current) onPan();
           drag.current = null;
         }}
         onPointerUp={(event) => {
           const current = drag.current;
           drag.current = null;
-          if (!current || current.moved) return;
+          if (playing || !current || current.moved) return;
           const bounds = tiles.current!.getBoundingClientRect();
           const x = (event.clientX - bounds.left) / scale;
           const y = (event.clientY - bounds.top) / scale;
@@ -274,9 +247,9 @@ export function OverviewViewport({
           ) : null}
         </div>
       </ScrollAreaViewport>
-      <ScrollBar orientation="horizontal" onPointerDown={onPan} />
-      <ScrollBar onPointerDown={onPan} />
+      <ScrollBar orientation="horizontal" aria-disabled={playing} />
+      <ScrollBar aria-disabled={playing} />
       <ScrollAreaCorner />
-    </ScrollAreaRoot>
+    </PreviewScrollArea>
   );
 }

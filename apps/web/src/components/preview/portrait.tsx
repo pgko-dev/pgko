@@ -11,9 +11,10 @@ import {
 } from "ugc-render";
 import { ChartPainter } from "ugc-render/canvas";
 
-import { ScrollAreaRoot, ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
+import { PreviewScrollArea } from "./scroll-area";
 import type { PreviewViewportProps } from "./viewport";
 
 export function PortraitViewport({
@@ -21,8 +22,7 @@ export function PortraitViewport({
   zoom,
   expanded,
   tick,
-  follow,
-  onPan,
+  playing,
   onSeek,
   label,
   options,
@@ -62,13 +62,19 @@ export function PortraitViewport({
   }, []);
 
   useLayoutEffect(() => {
-    const reflowed = previousView.current !== view;
+    const previous = previousView.current;
     previousView.current = view;
-    if (!follow && !reflowed) return;
+    if (!playing && previous === view) return;
+
     const element = scroll.current!;
-    element.scrollTo({ top: portraitScrollTop(view, tick), behavior: "instant" });
+    // Preserve the visible time when a paused view is resized or zoomed.
+    const anchorTick =
+      playing || !previous
+        ? tick
+        : (1 - Math.max(0, Math.min(top / previous.scrollRange, 1))) * previous.layout.endTick;
+    element.scrollTo({ top: portraitScrollTop(view, anchorTick), behavior: "instant" });
     setTop(element.scrollTop);
-  }, [view, tick, follow, top]);
+  }, [view, tick, playing, top]);
 
   useLayoutEffect(() => {
     const element = canvas.current!;
@@ -99,7 +105,8 @@ export function PortraitViewport({
   }, []);
 
   return (
-    <ScrollAreaRoot
+    <PreviewScrollArea
+      playing={playing}
       className={cn("min-w-0 overflow-hidden rounded-lg bg-black", expanded && "min-h-40 flex-1")}
       style={{ height: expanded ? undefined : CANVAS_HEIGHT * 0.5 }}
     >
@@ -110,14 +117,11 @@ export function PortraitViewport({
         aria-label={label}
         data-portrait="true"
         className="absolute inset-0 [touch-action:pan-y] overscroll-contain"
+        style={playing ? { overflow: "hidden", touchAction: "none" } : undefined}
         onScroll={(event) => setTop(event.currentTarget.scrollTop)}
-        onWheel={(event) => {
-          if (!event.ctrlKey && event.deltaY) onPan();
-        }}
         onKeyDown={(event) => {
           if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(event.key)) {
             event.preventDefault();
-            onPan();
             const element = event.currentTarget;
             const step = event.key.startsWith("Page") ? size.height * 0.8 : 48;
             const delta = ["ArrowUp", "PageUp"].includes(event.key) ? -step : step;
@@ -128,6 +132,7 @@ export function PortraitViewport({
           }
         }}
         onPointerDown={(event) => {
+          if (playing) return;
           drag.current = {
             x: event.clientX,
             y: event.clientY,
@@ -138,22 +143,21 @@ export function PortraitViewport({
           if (event.pointerType === "mouse") event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
+          if (playing) return;
           const current = drag.current;
           if (current?.pointer !== event.pointerId) return;
           if (Math.hypot(event.clientX - current.x, event.clientY - current.y) <= 6) return;
           current.moved = true;
-          onPan();
           if (event.pointerType === "mouse")
             event.currentTarget.scrollTop = current.top + current.y - event.clientY;
         }}
         onPointerCancel={() => {
-          if (drag.current) onPan();
           drag.current = null;
         }}
         onPointerUp={(event) => {
           const current = drag.current;
           drag.current = null;
-          if (!current || current.moved) return;
+          if (playing || !current || current.moved) return;
           const bounds = event.currentTarget.getBoundingClientRect();
           const x = (event.clientX - bounds.left - view.offsetX) / view.scale;
           const y = (event.clientY - bounds.top) / view.scale;
@@ -188,7 +192,7 @@ export function PortraitViewport({
           </div>
         </div>
       </ScrollAreaViewport>
-      <ScrollBar onPointerDown={onPan} />
-    </ScrollAreaRoot>
+      <ScrollBar aria-disabled={playing} />
+    </PreviewScrollArea>
   );
 }

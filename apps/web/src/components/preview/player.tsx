@@ -68,10 +68,8 @@ export function PreviewPlayer({
   const [portraitOverride, setPortraitOverride] = useState<boolean>();
   const portrait = portraitOverride ?? isMobile;
   const [renderOptions, setRenderOptions] = useState<ChartRenderOptions>({});
-  const [follow, setFollow] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [playError, setPlayError] = useState(false);
-  const stopFollow = useCallback(() => setFollow(false), []);
   const seekTick = useCallback(
     (tick: number) => transport.current?.seek(timing.tickToSeconds(tick)),
     [timing],
@@ -253,8 +251,7 @@ export function PreviewPlayer({
             expanded={expanded || fitted}
             portrait={portrait}
             tick={timing.secondsToTick(position)}
-            follow={follow}
-            onPan={stopFollow}
+            playing={snapshot.state === "playing"}
             onSeek={seekTick}
             label={t("beatmapRegion")}
             options={renderOptions}
@@ -269,8 +266,6 @@ export function PreviewPlayer({
             onPortraitChange={setPortraitOverride}
             options={renderOptions}
             onOptionsChange={setRenderOptions}
-            follow={follow}
-            onFollowChange={setFollow}
             onToggle={toggle}
             onNavigateBar={navigateBar}
             container={panel}
