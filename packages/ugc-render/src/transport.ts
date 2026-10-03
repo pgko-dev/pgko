@@ -1,7 +1,7 @@
 import { HitQueue, type ChartTiming } from "./timing.js";
 
 /** Hit-sound grouping window in milliseconds. */
-const HIT_SOUND_DEBOUNCE_MS = 7;
+export const HIT_SOUND_DEBOUNCE_MS = 7;
 
 export type TransportSnapshot = {
   position: number;

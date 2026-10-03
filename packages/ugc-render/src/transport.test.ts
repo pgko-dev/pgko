@@ -2,7 +2,9 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 
 import { prepareChart } from "./prepare.js";
 import { createTiming } from "./timing.js";
-import { ChartTransport } from "./transport.js";
+import { ChartTransport, HIT_SOUND_DEBOUNCE_MS } from "./transport.js";
+
+const hitWindow = HIT_SOUND_DEBOUNCE_MS / 1000;
 
 class FakeAudio extends EventTarget {
   static latest: FakeAudio;
@@ -151,7 +153,7 @@ test("first playback waits for sample decoding without losing the initial attack
   decoded({});
   await playing;
   expect(transport.position).toBe(0);
-  expect(FakeSource.all[0].startAt).toBeCloseTo(5.007, 9);
+  expect(FakeSource.all[0].startAt).toBeCloseTo(5 + hitWindow, 9);
 });
 
 test("seek and rate changes cancel old nodes and do not burst missed hits", async () => {
@@ -189,7 +191,7 @@ test("a resolved play request cannot start the clock or hits before seeking fini
   FakeAudio.latest.dispatchEvent(new Event("seeked"));
   expect(transport.snapshot()).toMatchObject({ state: "playing", position: 2 });
   expect(FakeSource.all).toHaveLength(1);
-  expect(FakeSource.all[0].startAt).toBeCloseTo(5.007, 9);
+  expect(FakeSource.all[0].startAt).toBeCloseTo(5 + hitWindow, 9);
   transport.pause();
   FakeAudio.latest.dispatchEvent(new Event("seeked"));
   expect(transport.snapshot().state).toBe("paused");
@@ -328,7 +330,8 @@ test.each([1.95, 1.85])(
     await waitForPump();
     const releases = FakeSource.all.filter((source) => source.startAt >= 2);
     expect(releases).toHaveLength(1);
-    expect(releases[0].startAt).toBeCloseTo(previousTime === 1.95 ? 2.007 : 2.017, 9);
+    const releaseTime = previousTime === 1.95 ? 2 : 2.01;
+    expect(releases[0].startAt).toBeCloseTo(releaseTime + hitWindow, 9);
     expect(transport.snapshot()).toMatchObject({ state: "paused", position: 2, duration: 2 });
     expect(releases[0].stopped).toBe(false);
     await waitForPump();
@@ -338,52 +341,75 @@ test.each([1.95, 1.85])(
   },
 );
 
-test.each([0.5, 1, 2])("dense hits combine after 7 ms at playback rate %s", async (rate) => {
-  const hits = Array.from({ length: 481 }, (_, index) => index * 0.00025 * rate);
-  const transport = engine(false, 0, 4, hits);
-  transport.setRate(rate);
-  await transport.play();
+test.each([0.5, 1, 2])(
+  "dense hits combine within the hit window at playback rate %s",
+  async (rate) => {
+    const hits = Array.from({ length: 69 }, (_, index) => (index * hitWindow * rate) / 4);
+    const transport = engine(false, 0, 4, hits);
+    transport.setRate(rate);
+    await transport.play();
 
-  expect(FakeSource.all).toHaveLength(15);
-  expect(FakeSource.all[0].startAt).toBe(0.007);
-  FakeContext.latest.currentTime = 0.05;
-  await waitForPump();
+    const initialWindows = Math.min(18, Math.floor((0.1 + 1e-9) / hitWindow) + 1);
+    expect(FakeSource.all).toHaveLength(initialWindows);
+    expect(FakeSource.all[0].startAt).toBe(hitWindow);
+    for (let time = 0.05; time < 17 * hitWindow + 0.05; time += 0.05) {
+      FakeContext.latest.currentTime = time;
+      await waitForPump();
+    }
 
-  expect(FakeSource.all).toHaveLength(18);
-  for (const [index, source] of FakeSource.all.entries()) {
-    expect(source.startAt).toBeCloseTo((index + 1) * 0.007, 9);
-  }
-  await waitForPump();
-  expect(FakeSource.all).toHaveLength(18);
-});
+    expect(FakeSource.all).toHaveLength(18);
+    for (const [index, source] of FakeSource.all.entries()) {
+      expect(source.startAt).toBeCloseTo((index + 1) * hitWindow, 9);
+    }
+    await waitForPump();
+    expect(FakeSource.all).toHaveLength(18);
+  },
+);
 
 test("a hit window spans scheduler batches and combines simultaneous hits", async () => {
-  const transport = engine(false, 0, 4, [0.09975, 0.10025, 0.1065, 0.10675, 0.10675]);
+  const firstHit = 0.1 - hitWindow / 2;
+  const boundary = firstHit + hitWindow;
+  const transport = engine(false, 0, 4, [
+    firstHit,
+    0.1 + hitWindow / 4,
+    boundary - hitWindow / 4,
+    boundary,
+    boundary,
+  ]);
   await transport.play();
   expect(FakeSource.all).toHaveLength(1);
-  expect(FakeSource.all[0].startAt).toBeCloseTo(0.10675, 9);
+  expect(FakeSource.all[0].startAt).toBeCloseTo(boundary, 9);
 
-  FakeContext.latest.currentTime = 0.025;
+  FakeContext.latest.currentTime = hitWindow / 2;
   await waitForPump();
   expect(FakeSource.all).toHaveLength(2);
-  expect(FakeSource.all[1].startAt).toBeCloseTo(0.11375, 9);
+  expect(FakeSource.all[1].startAt).toBeCloseTo(boundary + hitWindow, 9);
 });
 
 test("overdue hits combine into one delayed sound without a catch-up burst", async () => {
-  const transport = engine(false, 0, 4, [0, 0.15, 0.181, 0.182, 0.19, 0.2, 0.2005, 0.207]);
+  const transport = engine(false, 0, 4, [
+    0,
+    0.15,
+    0.181,
+    0.182,
+    0.19,
+    0.2,
+    0.2 + hitWindow / 2,
+    0.2 + hitWindow,
+  ]);
   await transport.play();
   FakeContext.latest.currentTime = 0.2;
   await waitForPump();
 
   expect(FakeSource.all).toHaveLength(3);
-  expect(FakeSource.all[1].startAt).toBeCloseTo(0.207, 9);
-  expect(FakeSource.all[2].startAt).toBeCloseTo(0.214, 9);
+  expect(FakeSource.all[1].startAt).toBeCloseTo(0.2 + hitWindow, 9);
+  expect(FakeSource.all[2].startAt).toBeCloseTo(0.2 + 2 * hitWindow, 9);
 });
 
 test.each(["pause", "seek", "rate", "buffering"])(
   "%s cancels delayed groups and starts fresh hit windows",
   async (action) => {
-    const transport = engine(true, 0, 4, [0, 0.0035, 0.007, 0.014]);
+    const transport = engine(true, 0, 4, [0, hitWindow / 2, hitWindow, 2 * hitWindow]);
     await transport.play();
     const previous = [...FakeSource.all];
     expect(previous).toHaveLength(3);
@@ -404,7 +430,7 @@ test.each(["pause", "seek", "rate", "buffering"])(
     expect(previous.every((source) => source.stopped)).toBe(true);
     const resumed = FakeSource.all.filter((source) => !source.stopped);
     expect(resumed).toHaveLength(action === "rate" ? 2 : 3);
-    expect(resumed[0].startAt).toBe(0.007);
+    expect(resumed[0].startAt).toBe(hitWindow);
     const count = FakeSource.all.length;
     await waitForPump();
     expect(FakeSource.all).toHaveLength(count);
@@ -424,5 +450,5 @@ test("replay clears a delayed final hit before starting a new window", async () 
   expect(previous.every((source) => source.stopped)).toBe(true);
   const replay = FakeSource.all.filter((source) => !source.stopped);
   expect(replay).toHaveLength(2);
-  expect(replay[0].startAt).toBeCloseTo(0.057, 9);
+  expect(replay[0].startAt).toBeCloseTo(0.05 + hitWindow, 9);
 });
