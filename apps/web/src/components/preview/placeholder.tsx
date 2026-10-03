@@ -22,6 +22,12 @@ export function PreviewPlaceholder({
   children?: ReactNode;
 }>) {
   const { t } = useTranslation();
+  let icon = <Music2 className="size-8" aria-hidden />;
+  if (state === "loading") {
+    icon = <Spinner className="size-8 motion-reduce:animate-none" aria-hidden />;
+  } else if (state === "error") {
+    icon = <CircleAlert className="size-8 text-destructive" aria-hidden />;
+  }
 
   return (
     <section
@@ -42,13 +48,7 @@ export function PreviewPlaceholder({
           <X />
         </Button>
       ) : null}
-      {state === "loading" ? (
-        <Spinner className="size-8 motion-reduce:animate-none" aria-hidden />
-      ) : state === "error" ? (
-        <CircleAlert className="size-8 text-destructive" aria-hidden />
-      ) : (
-        <Music2 className="size-8" aria-hidden />
-      )}
+      {icon}
       <output
         role={state === "error" ? "alert" : "status"}
         className="max-w-prose text-center text-sm"

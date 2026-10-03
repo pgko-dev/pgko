@@ -141,8 +141,7 @@ function ribbon(
   y: (tick: number) => number,
   colors: readonly string[],
   alpha: number,
-  startTick: number,
-  endTick: number,
+  window: TickWindow,
   centerColor?: string,
 ) {
   if (points.length < 2) return;
@@ -156,7 +155,7 @@ function ribbon(
   if (colors.length === 1) context.fillStyle = colors[0];
   else {
     // Original endpoints remain unchanged when the canvas clips a column.
-    const gradient = context.createLinearGradient(0, y(startTick), 0, y(endTick));
+    const gradient = context.createLinearGradient(0, y(window.start), 0, y(window.end));
     [0, 0.375, 0.625, 1].forEach((stop, index) => gradient.addColorStop(stop, colors[index]));
     context.fillStyle = gradient;
   }
@@ -206,20 +205,33 @@ function longBody(
     if (note.kind === "airCrush") {
       centerRibbon(context, points, y, crushColor(note.color));
     } else {
-      const air = note.kind === "airSlide";
-      const slide = note.kind === "slide";
-      ribbon(
-        context,
-        points,
-        y,
-        air ? [theme.airUp] : slide ? SLIDE_GRADIENT : theme.holdGradient,
-        air ? 0.25 : 0.672,
-        startTick,
-        endTick,
-        air || slide ? theme.slideCenter : undefined,
-      );
+      longRibbon(context, note, points, y, { start: startTick, end: endTick });
     }
   }
+}
+
+function longRibbon(
+  context: Context,
+  note: ChartNote,
+  points: ChartPoint[],
+  y: (tick: number) => number,
+  window: TickWindow,
+) {
+  const air = note.kind === "airSlide";
+  const slide = note.kind === "slide";
+  let colors: readonly string[] = theme.holdGradient;
+  if (air) colors = [theme.airUp];
+  else if (slide) colors = SLIDE_GRADIENT;
+
+  ribbon(
+    context,
+    points,
+    y,
+    colors,
+    air ? 0.25 : 0.672,
+    window,
+    air || slide ? theme.slideCenter : undefined,
+  );
 }
 
 export function interpolatePoint(note: ChartNote, tick: number): ChartPoint {
@@ -379,16 +391,7 @@ export class ChartPainter {
       bottom - top + NOTE_PADDING + NOTE_BOTTOM_PADDING,
     );
     context.clip();
-    for (const note of notes) {
-      if (note.kind === "hold" || note.kind === "slide") {
-        longBody(context, note, this.geometry.get(note), y, window);
-      }
-    }
-    for (const kind of AIR_LONG_KINDS) {
-      for (const note of notes) {
-        if (note.kind === kind) longBody(context, note, this.geometry.get(note), y, window);
-      }
-    }
+    this.longBodies(context, notes, y, window);
 
     // Margrete layers long markers below short notes; AIR pairing changes color, not depth.
     const markers = notes.toSorted((a, b) => b.width - a.width);
@@ -405,6 +408,24 @@ export class ChartPainter {
 
     if (options.showDirectionText) directions(context, notes, y, scale);
     context.restore();
+  }
+
+  private longBodies(
+    context: Context,
+    notes: ChartNote[],
+    y: (tick: number) => number,
+    window: TickWindow,
+  ) {
+    for (const note of notes) {
+      if (note.kind === "hold" || note.kind === "slide") {
+        longBody(context, note, this.geometry.get(note), y, window);
+      }
+    }
+    for (const kind of AIR_LONG_KINDS) {
+      for (const note of notes) {
+        if (note.kind === kind) longBody(context, note, this.geometry.get(note), y, window);
+      }
+    }
   }
 
   paint(context: Context, column: PreviewColumn, scale: number, options: ChartRenderOptions = {}) {
@@ -485,7 +506,17 @@ function airActions(
       if (child.action || showControlPoints) action(context, child, y(child.tick), theme.airAction);
     }
   }
-  if (note.kind !== "airCrush") return;
+  if (note.kind === "airCrush") crushActions(context, note, column, y, window, showControlPoints);
+}
+
+function crushActions(
+  context: Context,
+  note: ChartNote,
+  column: PreviewColumn,
+  y: (tick: number) => number,
+  window: TickWindow,
+  showControlPoints: boolean,
+) {
   if (note.interval !== 0 || showControlPoints) {
     action(
       context,
@@ -496,12 +527,7 @@ function airActions(
     );
   }
   if (showControlPoints) {
-    const first = pointBound(note.children, window.start);
-    for (let index = first; index < note.children.length; index++) {
-      const child = note.children[index];
-      if (child.tick > window.end) break;
-      action(context, { ...child, action: false }, y(child.tick), theme.crush);
-    }
+    crushControlPoints(context, note, y, window);
   }
   if (note.interval === null || note.interval <= 0) return;
   const first = Math.max(1, Math.ceil((column.startTick - note.tick) / note.interval));
@@ -512,6 +538,20 @@ function airActions(
   for (let index = first; index <= last; index++) {
     const point = interpolatePoint(note, note.tick + index * note.interval);
     action(context, { ...point, action: true }, y(point.tick), theme.crush);
+  }
+}
+
+function crushControlPoints(
+  context: Context,
+  note: ChartNote,
+  y: (tick: number) => number,
+  window: TickWindow,
+) {
+  const first = pointBound(note.children, window.start);
+  for (let index = first; index < note.children.length; index++) {
+    const child = note.children[index];
+    if (child.tick > window.end) break;
+    action(context, { ...child, action: false }, y(child.tick), theme.crush);
   }
 }
 
