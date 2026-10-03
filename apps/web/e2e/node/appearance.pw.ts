@@ -167,6 +167,27 @@ test("air-crush traces use the Margrete palette in UGC color order", async ({ pa
   await captureCanvas(page, info.outputPath("air-crush-palette.png"));
 });
 
+test("dense air-crush sweeps retain gaps between traces", async ({ page }, info) => {
+  const traces = Array.from({ length: 12 }, (_, index) => [
+    `#0'${360 + index * 24}:C2228C,0`,
+    "#24:cB228",
+  ]).flat();
+  const source = ["@BPM\t0'0\t120", ...traces].join("\n");
+  await open(page, source);
+
+  const sampleRegion = () =>
+    pixels(page, laneX(6), noteY(612), laneX(9) - laneX(6), noteY(396) - noteY(612));
+  const region = await sampleRegion();
+  const coverage = region.filter((_, index) => index % 4 === 0);
+  // Bright traces must leave most of the grid unobscured at the preview's native scale.
+  expect(coverage.filter((red) => red > 85).length / coverage.length).toBeLessThan(0.25);
+  await captureCanvas(page, info.outputPath("air-crush-sweeps.png"));
+
+  // The traces still contribute pixels, even when their edges are antialiased.
+  await open(page, source.replaceAll("28C,0", "28Z,0"));
+  expect(region).not.toEqual(await sampleRegion());
+});
+
 test("EX and air-paired ground markers stay on top and control markers are opt-in", async ({
   page,
 }, info) => {

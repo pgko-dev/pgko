@@ -156,16 +156,24 @@ function ribbon(
   context.globalAlpha = alpha;
   context.fill();
   context.globalAlpha = 1;
-  if (centerColor) {
-    polygon(context, [
-      ...points.map((point): Vertex => [laneX(point.lane + point.width / 2) - 2, y(point.tick)]),
-      ...points
-        .toReversed()
-        .map((point): Vertex => [laneX(point.lane + point.width / 2) + 2, y(point.tick)]),
-    ]);
-    context.fillStyle = centerColor;
-    context.fill();
-  }
+  if (centerColor) centerRibbon(context, points, y, centerColor);
+}
+
+function centerRibbon(
+  context: Context,
+  points: ChartPoint[],
+  y: (tick: number) => number,
+  color: string,
+) {
+  // Keep the width horizontal; a Canvas stroke widens shallow segments vertically.
+  polygon(context, [
+    ...points.map((point): Vertex => [laneX(point.lane + point.width / 2) - 2, y(point.tick)]),
+    ...points
+      .toReversed()
+      .map((point): Vertex => [laneX(point.lane + point.width / 2) + 2, y(point.tick)]),
+  ]);
+  context.fillStyle = color;
+  context.fill();
 }
 
 function longBody(context: Context, note: ChartNote, y: (tick: number) => number) {
@@ -185,17 +193,7 @@ function longBody(context: Context, note: ChartNote, y: (tick: number) => number
   }
   if (note.kind === "airSlide") ribbon(context, points, y, [theme.airUp], 0.25, theme.slideCenter);
   if (note.kind === "airCrush" && note.color !== "Z") {
-    for (let index = 1; index < points.length; index++) {
-      line(
-        context,
-        laneX(points[index - 1].lane + points[index - 1].width / 2),
-        y(points[index - 1].tick),
-        laneX(points[index].lane + points[index].width / 2),
-        y(points[index].tick),
-        crushColor(note.color),
-        4,
-      );
-    }
+    centerRibbon(context, points, y, crushColor(note.color));
   }
 }
 
