@@ -154,6 +154,8 @@
     @apply border-border outline-ring/50;
   }
   body {
+    /* Base UI's iOS drawer backdrop is positioned against the body. */
+    position: relative;
     @apply bg-background font-sans text-foreground;
   }
   html {

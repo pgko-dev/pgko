@@ -1,16 +1,16 @@
 import { AlertTriangle, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/responsive-dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type ConfirmDialogTone = "default" | "destructive";
@@ -24,7 +24,7 @@ interface ConfirmDialogProps {
   tone?: ConfirmDialogTone;
   cancelLabel: ReactNode;
   confirmContent: ReactNode;
-  /** When true, disables both buttons and hides the close button by default. */
+  /** When true, prevents dismissal, disables both buttons, and hides the close button by default. */
   isBusy?: boolean;
   /** Additional flag to disable only the confirm button (e.g. countdowns). */
   isConfirmDisabled?: boolean;
@@ -49,6 +49,7 @@ export function ConfirmDialog({
   onConfirm,
 }: Readonly<ConfirmDialogProps>) {
   const { t } = useTranslation();
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const effectiveShowCloseButton = showCloseButton ?? !isBusy;
   const resolvedTitle = title ?? t("ui.confirmDialog.warningTitle");
   const resolvedIcon = icon ?? <AlertTriangle className="size-4 shrink-0" aria-hidden />;
@@ -59,19 +60,24 @@ export function ConfirmDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" showCloseButton={effectiveShowCloseButton}>
-        <DialogHeader>
-          <DialogTitle
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange} dismissible={!isBusy}>
+      <ResponsiveDialogContent
+        dialogClassName="sm:max-w-md"
+        showCloseButton={effectiveShowCloseButton}
+        initialFocus={cancelButtonRef}
+      >
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle
             className={cn("flex items-center gap-2", tone === "destructive" && "text-destructive")}
           >
             {resolvedIcon}
             {resolvedTitle}
-          </DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
-        </DialogHeader>
-        <DialogFooter showCloseButton={false} className="flex-row gap-2 sm:justify-end">
+          </ResponsiveDialogTitle>
+          {description && <ResponsiveDialogDescription>{description}</ResponsiveDialogDescription>}
+        </ResponsiveDialogHeader>
+        <ResponsiveDialogFooter>
           <Button
+            ref={cancelButtonRef}
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -88,8 +94,8 @@ export function ConfirmDialog({
           >
             {confirmContent}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
