@@ -142,7 +142,9 @@ test("loads on demand, preserves video links, renders columns and follows playba
       Number(await page.getByRole("slider", { name: "Playback position" }).inputValue()),
     )
     .toBeGreaterThan(1);
-  await page.getByRole("combobox", { name: "Zoom", exact: true }).click();
+  const zoom = page.getByRole("combobox", { name: "Zoom", exact: true });
+  if (info.project.use.isMobile) await zoom.tap();
+  else await zoom.click();
   await page.getByRole("option", { name: "100%", exact: true }).click();
   const field = page.getByRole("region", { name: /Beatmap columns/ });
   await page.getByRole("slider", { name: "Playback position" }).focus();
