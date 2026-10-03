@@ -46,7 +46,8 @@ test("theme tokens keep preview text readable in light and dark", async ({ page 
   await page.getByRole("button", { name: "Open preview", exact: true }).click();
   const player = page.getByRole("region", { name: "Beatmap preview", exact: true });
   await expect(player.locator("canvas").first()).toBeVisible();
-  await expect(player.locator('[data-slot="card-description"], output')).toHaveCount(0);
+  await expect(player.locator('[data-slot="card-description"]')).toHaveCount(0);
+  await expect(player.getByRole("status", { name: "Zoom", exact: true })).toHaveText("50%");
   await expect(player.getByRole("combobox", { name: "Playback speed" })).toHaveCount(0);
 
   for (const theme of ["Light", "Dark"]) {
@@ -67,7 +68,7 @@ test("theme tokens keep preview text readable in light and dark", async ({ page 
         return red * 0.2126 + green * 0.7152 + blue * 0.0722;
       };
       const background = luminance(getComputedStyle(card).backgroundColor);
-      return ["h3", '[data-slot="preview-controls"]', "label"].map((selector) => {
+      return ["h3", '[data-slot="preview-controls"]', "output"].map((selector) => {
         const foreground = luminance(getComputedStyle(card.querySelector(selector)!).color);
         return (
           (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)
