@@ -8,12 +8,15 @@
     "dev": "bunx vite",
     "test": "bun test --parallel",
     "test:coverage": "bun test --parallel --coverage --coverage-reporter=lcov",
-    "tsc": "tsc -b",
+    "tsc": "tsc -b && tsc -p e2e/tsconfig.browser.json && tsc -p e2e/tsconfig.node.json",
     "lint": "oxlint .",
     "fmt": "oxfmt --check .",
     "fmt:w": "oxfmt .",
     "check": "bun run lint && bun run fmt && bun run tsc && bun run test && bun run build",
-    "check:coverage": "bun run lint && bun run fmt && bun run tsc && bun run test:coverage && bun run build"
+    "check:coverage": "bun run lint && bun run fmt && bun run tsc && bun run test:coverage && bun run build",
+    "test:browser": "playwright test",
+    "dev:preview": "bun run --cwd ../.. build:packages && vite --config e2e/vite.config.ts --host 127.0.0.1 --port 43179 --strictPort",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
@@ -62,12 +65,14 @@
     "sonner": "catalog:",
     "tailwindcss": "catalog:",
     "tw-animate-css": "catalog:",
+    "ugc-render": "workspace:*",
     "universal-cookie": "catalog:",
     "valibot": "catalog:"
   },
   "devDependencies": {
     "@mdx-js/rollup": "catalog:",
     "@pgko-dev/tsconfig": "workspace:*",
+    "@playwright/test": "catalog:",
     "@sentry/vite-plugin": "catalog:",
     "@tanstack/eslint-plugin-query": "catalog:",
     "@tanstack/eslint-plugin-router": "catalog:",

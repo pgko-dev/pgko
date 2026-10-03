@@ -1,4 +1,4 @@
-import { Pause, Play, Video } from "lucide-react";
+import { FileChartColumn, Pause, Play, Video } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { BundleRules } from "@pgko-dev/config";
@@ -19,6 +19,7 @@ export interface SongPanelProps {
   videoUrlInvalid?: boolean;
   onPlayPreview: (song: SongSummary) => void;
   isPreviewPlaying: boolean;
+  onPreviewBeatmap?: (song: SongSummary) => void;
 }
 
 export function SongPanel({
@@ -29,6 +30,7 @@ export function SongPanel({
   videoUrlInvalid,
   onPlayPreview,
   isPreviewPlaying,
+  onPreviewBeatmap,
 }: Readonly<SongPanelProps>) {
   const { t } = useTranslation();
   const isEditable = typeof onVideoUrlChange === "function";
@@ -56,7 +58,7 @@ export function SongPanel({
         <div className="relative flex aspect-square h-full min-w-16 overflow-hidden rounded-lg bg-muted ring-1 ring-border/40">
           <RemoteImage
             src={song.jacketUrl}
-            alt="jacket"
+            alt={t("ui.uploadDetail.cover.title")}
             className="absolute inset-0"
             fallbackIconClassName="size-5 text-muted-foreground"
           />
@@ -114,6 +116,20 @@ export function SongPanel({
               />
             </span>
             <AutoScrollMarquee className="min-w-0 flex-1">{song.designer ?? "-"}</AutoScrollMarquee>
+            {onPreviewBeatmap ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="relative z-20 shrink-0"
+                onClick={() => onPreviewBeatmap(song)}
+                title={t("ui.preview.open")}
+                aria-label={t("ui.preview.open")}
+              >
+                <FileChartColumn className="size-4" />
+                <span className="hidden sm:inline">{t("ui.preview.open")}</span>
+              </Button>
+            ) : null}
             {hasReadOnlyVideo ? (
               <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] leading-none font-semibold text-primary ring-1 ring-primary/20 ring-inset">
                 <Video className="size-3" aria-hidden />

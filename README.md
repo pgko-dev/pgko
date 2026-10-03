@@ -2,12 +2,12 @@
 
 Public applications and shared packages for [pgko](https://pgko.dev/).
 
-| Path                         | Contents                      |
-| ---------------------------- | ----------------------------- |
-| [apps/web](apps/web)         | Frontend                      |
-| [apps/openapi](apps/openapi) | API reference                 |
-| [apps/worker](apps/worker)   | Cloudflare Worker             |
-| [packages](packages)         | Public `@pgko-dev/*` packages |
+| Path                         | Contents               |
+| ---------------------------- | ---------------------- |
+| [apps/web](apps/web)         | Frontend               |
+| [apps/openapi](apps/openapi) | API reference          |
+| [apps/worker](apps/worker)   | Cloudflare Worker      |
+| [packages](packages)         | Public shared packages |
 
 ## Development
 

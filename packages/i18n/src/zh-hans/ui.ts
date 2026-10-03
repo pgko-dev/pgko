@@ -1,6 +1,9 @@
 import type { UiTranslation } from "../en/ui.js";
 
+import { preview } from "./preview.js";
+
 export const ui = {
+  preview,
   homePage: {
     title: "谱面",
     description: "探索社区分享的 UMIGURI 谱面",
@@ -288,6 +291,17 @@ export const ui = {
     declineConfirm: "确定拒绝并屏蔽此合作请求？",
   },
   bundlePage: {
+    details: "详情",
+    beatmapBrowser: "谱面浏览",
+    searchBeatmaps: "曲名、艺术家或谱师",
+    noMatchingBeatmaps: "没有匹配的谱面。",
+    noBeatmaps: "暂无谱面。",
+    selectBeatmap: "选择谱面",
+    showList: "显示谱面列表",
+    hideList: "收起谱面列表",
+    previousBeatmap: "上一谱面",
+    nextBeatmap: "下一谱面",
+    beatmapCount: "{{count}} / {{total}} 个谱面",
     title: "曲包详情",
     description: "简介",
     download: "下载",

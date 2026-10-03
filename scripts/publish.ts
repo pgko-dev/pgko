@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 
-import { packageNames, root, run } from "./packages";
+import { packageArchiveName, packageNames, root, run } from "./packages";
 
 type PublishedPackage = {
   dist: {
@@ -21,10 +21,13 @@ if (initial && !process.env.CI) {
 
 // Publish in dependency order and stop at the first failed registry or integrity check.
 for (const name of packageNames) {
-  const tarball = join(root, "artifacts", `pgko-dev-${name}-${version}.tgz`);
+  const pkg = await Bun.file(join(root, "packages", name, "package.json")).json();
+  const tarball = join(root, "artifacts", packageArchiveName(pkg.name, version));
 
   // Query HTTP directly to distinguish an absent version from registry/auth outages.
-  const response = await fetch(`https://registry.npmjs.org/@pgko-dev%2f${name}/${version}`);
+  const response = await fetch(
+    `https://registry.npmjs.org/${encodeURIComponent(pkg.name)}/${version}`,
+  );
 
   if (response.ok) {
     const published = (await response.json()) as PublishedPackage;
@@ -34,11 +37,11 @@ for (const name of packageNames) {
 
     if (published.dist.integrity !== integrity) {
       throw new Error(
-        `@pgko-dev/${name}@${version} already exists with different contents; bump the version.`,
+        `${pkg.name}@${version} already exists with different contents; bump the version.`,
       );
     }
 
-    console.log(`@pgko-dev/${name}@${version} already published; skipping.`);
+    console.log(`${pkg.name}@${version} already published; skipping.`);
     continue;
   }
 

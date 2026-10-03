@@ -1,6 +1,9 @@
 import type { UiTranslation } from "../en/ui.js";
 
+import { preview } from "./preview.js";
+
 export const ui = {
+  preview,
   homePage: {
     title: "비트맵",
     description: "커뮤니티가 공유한 UMIGURI 비트맵을 둘러보세요",
@@ -290,6 +293,17 @@ export const ui = {
     declineConfirm: "이 협업 요청을 거절하고 차단할까요?",
   },
   bundlePage: {
+    details: "상세 정보",
+    beatmapBrowser: "채보 탐색",
+    searchBeatmaps: "곡명, 아티스트 또는 채보 제작자",
+    noMatchingBeatmaps: "일치하는 채보가 없습니다.",
+    noBeatmaps: "채보가 없습니다.",
+    selectBeatmap: "채보 선택",
+    showList: "채보 목록 표시",
+    hideList: "채보 목록 숨기기",
+    previousBeatmap: "이전 채보",
+    nextBeatmap: "다음 채보",
+    beatmapCount: "채보 {{count}} / {{total}}개",
     title: "곡팩 상세",
     description: "설명",
     download: "다운로드",

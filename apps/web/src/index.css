@@ -44,6 +44,9 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   --glass-bg: oklch(1 0 0 / 0.88);
+  --scrollbar-size: 0.5rem;
+  --scrollbar-thumb: oklch(0.556 0 0 / 0.42);
+  --scrollbar-thumb-hover: oklch(0.42 0 0 / 0.68);
   --diff-basic: #22ad39;
   --diff-advanced: #f39800;
   --diff-expert: #f12929;
@@ -86,6 +89,8 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
   --glass-bg: oklch(0.2 0 0 / 0.88);
+  --scrollbar-thumb: oklch(0.708 0 0 / 0.48);
+  --scrollbar-thumb-hover: oklch(0.82 0 0 / 0.72);
   --diff-basic: #2ed64a;
   --diff-advanced: #ffb030;
   --diff-expert: #ff4545;
@@ -160,6 +165,43 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* Non-auto standard properties override the WebKit thumb and hover styling. */
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) transparent;
+    }
+  }
+
+  *::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+
+  @media (forced-colors: active) {
+    :root,
+    .dark {
+      --scrollbar-thumb: CanvasText;
+      --scrollbar-thumb-hover: Highlight;
+    }
   }
 }
 

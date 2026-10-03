@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { InputField } from "./input-field.tsx";
-import "./password-field.module.css";
+import styles from "./password-field.module.css";
 
 export function PasswordField({
   confirmPassword,
@@ -20,7 +20,7 @@ export function PasswordField({
   return (
     <InputField
       {...rest}
-      className={cn(className, "hide-password-toggle")}
+      className={cn(className, styles["hide-password-toggle"])}
       type={showPassword ? "text" : "password"}
       inlineStart={confirmPassword ? <SquareCheck /> : <SquareAsterisk />}
       inlineEnd={

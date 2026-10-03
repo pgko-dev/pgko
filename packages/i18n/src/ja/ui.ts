@@ -1,6 +1,9 @@
 import type { UiTranslation } from "../en/ui.js";
 
+import { preview } from "./preview.js";
+
 export const ui = {
+  preview,
   homePage: {
     title: "譜面",
     description: "コミュニティが共有した UMIGURI 譜面を探そう",
@@ -289,6 +292,17 @@ export const ui = {
     declineConfirm: "この合作の招待を辞退し、ブロックしますか？",
   },
   bundlePage: {
+    details: "詳細",
+    beatmapBrowser: "譜面ブラウザー",
+    searchBeatmaps: "曲名・アーティスト・譜面作者",
+    noMatchingBeatmaps: "該当する譜面がありません。",
+    noBeatmaps: "譜面がありません。",
+    selectBeatmap: "譜面を選択",
+    showList: "譜面一覧を表示",
+    hideList: "譜面一覧を隠す",
+    previousBeatmap: "前の譜面",
+    nextBeatmap: "次の譜面",
+    beatmapCount: "{{count}} / {{total}} 譜面",
     title: "楽曲パック詳細",
     description: "説明",
     download: "ダウンロード",

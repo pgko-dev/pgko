@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client", "mdx"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "paths": { "@/*": ["../src/*"] }
+  },
+  "include": ["browser", "fixtures/beatmap.ts", "../@types"]
+}
