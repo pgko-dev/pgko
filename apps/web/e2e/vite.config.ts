@@ -17,6 +17,7 @@ export default defineConfig({
     entries: [
       "e2e/browser/bundle.html",
       "e2e/browser/preview.html",
+      "e2e/browser/bundle-page.html",
     ],
     exclude: ["ugc-render"],
   },
@@ -27,7 +28,8 @@ export default defineConfig({
       input: [
         "e2e/browser/bundle.html",
         "e2e/browser/preview.html",
-        ],
+        "e2e/browser/bundle-page.html",
+      ],
     },
   },
 });
