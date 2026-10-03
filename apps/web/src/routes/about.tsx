@@ -14,6 +14,8 @@ export const Route = createFileRoute("/about")({
   component: About,
 });
 
+const todoData: string[] = [];
+
 function formatBuildTimestamp(value: string): string | null {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -100,9 +102,11 @@ function About() {
         </dl>
       </SectionCard>
 
-      <SectionCard title={t("ui.aboutPage.todoHeading")}>
-        <Todo />
-      </SectionCard>
+      {todoData.length > 0 && (
+        <SectionCard title={t("ui.aboutPage.todoHeading")}>
+          <Todo todoItems={todoData} />
+        </SectionCard>
+      )}
 
       <SectionCard title={t("ui.aboutPage.changelogHeading")}>
         <div className="typeset typeset-docs">
