@@ -41,13 +41,15 @@ export function ManageContent() {
             <TabsList className="h-auto w-full flex-wrap gap-1">
               <TabsTrigger value="stat" className="gap-1.5">
                 <BarChart3 className="size-4" />
-                {t("ui.uploadDetail.tabs.stat")}
+                <span className="sr-only sm:not-sr-only">{t("ui.uploadDetail.tabs.stat")}</span>
               </TabsTrigger>
               {isOwner && (
                 <>
                   <TabsTrigger value="metadata" className="gap-1.5">
                     <FileEdit className="size-4" />
-                    {t("ui.uploadDetail.tabs.metadata")}
+                    <span className="sr-only sm:not-sr-only">
+                      {t("ui.uploadDetail.tabs.metadata")}
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger value="reupload" className="gap-1.5">
                     {manage.isReuploading ? (
@@ -55,11 +57,15 @@ export function ManageContent() {
                     ) : (
                       <Upload className="size-4" />
                     )}
-                    {t("ui.uploadDetail.tabs.reupload")}
+                    <span className="sr-only sm:not-sr-only">
+                      {t("ui.uploadDetail.tabs.reupload")}
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger value="delete" className="gap-1.5">
                     <Trash2 className="size-4" />
-                    {t("ui.uploadDetail.tabs.delete")}
+                    <span className="sr-only sm:not-sr-only">
+                      {t("ui.uploadDetail.tabs.delete")}
+                    </span>
                   </TabsTrigger>
                 </>
               )}
