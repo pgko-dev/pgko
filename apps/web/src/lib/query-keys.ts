@@ -4,7 +4,10 @@ export const QUERY_KEYS = {
   bundlePrivate: (bundleId?: string) => (bundleId ? ["bundle-private", bundleId] : []),
   bundlePublic: (bundleId?: string) => (bundleId ? ["bundle-public", bundleId] : []),
   bundleStats: (bundleId?: string) => (bundleId ? ["bundle-stats", bundleId] : []),
-  bundleList: (filters: BundleListQuery) => ["bundle-list", filters],
+  bundleList: (filters: BundleListQuery, account = false) => [
+    "bundle-list",
+    { ...filters, account },
+  ],
   bundleListAll: ["bundle-list"],
   userProfile: (jointID?: string) => (jointID ? ["user-profile", jointID] : []),
   userList: (filters: Omit<UserListQuery, "cursor">) => ["user-list", filters],

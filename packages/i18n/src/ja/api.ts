@@ -2,6 +2,14 @@ import type { ApiTranslation } from "../en/api.js";
 
 export const api = {
   error: {
+    resourceVersionConflict:
+      "編集中に曲パックが変更されました。再読み込みしてから保存してください。",
+    visibilityLocked: "管理者がこの曲パックの公開設定をロックしています。",
+    invalidSongId:
+      "この曲パックに含まれなくなった曲があります。再読み込みしてから保存してください。",
+    idempotencyConflict: "この再試行キーは別のリクエストで使用されています。",
+    invalidIdempotencyKey: "有効な Idempotency-Key ヘッダーが必要です。",
+    routeNotFound: "指定された API エンドポイントが見つかりません。",
     invalidCursor: "ページ送りのカーソルが無効です。最初のページからやり直してください。",
     tooManyRequests: "リクエストが多すぎます。しばらくしてからもう一度お試しください",
     unknown: "問題が発生しました。しばらくしてからもう一度お試しください",

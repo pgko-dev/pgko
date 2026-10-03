@@ -95,7 +95,7 @@ const extractFromResponsePayload = (data: unknown): TranslationKey[] => {
     }
   }
 
-  if (isRecord(data) && "message" in data) {
+  if (keys.length === 0 && isRecord(data) && "message" in data) {
     addKeys(keys, parseTranslationSingle(data.message));
   }
 

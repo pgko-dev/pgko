@@ -109,6 +109,7 @@ export const BundleDetailSchema = v.object({
   collaborators: v.optional(v.array(BundleCollaboratorSchema)),
   encodingIssues: v.optional(v.boolean()),
   role: v.optional(BundleManageRoleSchema),
+  resourceVersion: v.pipe(v.number(), v.integer(), v.minValue(1)),
 });
 export type BundleDetail = v.InferOutput<typeof BundleDetailSchema>;
 
@@ -206,6 +207,7 @@ export const BundleRandomResponseSchema = v.object({
 export type BundleRandomResponse = v.InferOutput<typeof BundleRandomResponseSchema>;
 
 export const BundleUpdateMetadataBodySchema = v.object({
+  expectedResourceVersion: v.pipe(v.number(), v.integer(), v.minValue(1)),
   title: v.optional(BundleTitleSchema),
   artist: v.optional(BundleArtistSchema),
   description: v.optional(BundleDescriptionSchema),
@@ -276,7 +278,8 @@ export const CreateBundleUploadSessionResponseSchema = v.object({
   sessionId: uuidString(),
   expiresAt: dateFrom(),
   partSize: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  parts: v.pipe(v.array(BundleUploadPartSchema), v.minLength(1)),
+  status: v.picklist(["uploading", "queued", "processing", "completed", "failed", "canceled"]),
+  parts: v.array(BundleUploadPartSchema),
 });
 export type CreateBundleUploadSessionResponse = v.InferOutput<
   typeof CreateBundleUploadSessionResponseSchema
@@ -397,3 +400,20 @@ export const AdminSetBundleVisibilityBodySchema = v.object({
   reason: v.optional(v.pipe(v.string(), v.maxLength(500))),
 });
 export type AdminSetBundleVisibilityBody = v.InferOutput<typeof AdminSetBundleVisibilityBodySchema>;
+
+export const PublicBundleListQuerySchema = v.omit(BundleListQuerySchema, [
+  "draftsOnly",
+  "collaborationsOnly",
+  "collaborationStatus",
+]);
+export type PublicBundleListQuery = v.InferOutput<typeof PublicBundleListQuerySchema>;
+
+export const AccountBundleListQuerySchema = v.pipe(
+  v.omit(BundleListQuerySchema, ["userId"]),
+  v.check(
+    (query) =>
+      [query.draftsOnly, query.collaborationsOnly, query.collaborationStatus].filter(Boolean)
+        .length <= 1,
+  ),
+);
+export type AccountBundleListQuery = v.InferOutput<typeof AccountBundleListQuerySchema>;

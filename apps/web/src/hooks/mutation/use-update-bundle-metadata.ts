@@ -12,43 +12,21 @@ type UpdateBundleMetadataVariables = BundleUpdateMetadataBody & {
   suppressToast?: boolean;
 };
 
-type UpdateBundleMetadataContext = {
-  previous: BundleGetResponse | undefined;
-};
-
 export function useUpdateBundleMetadata(bundleId: string) {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    BundleGetResponse,
-    unknown,
-    UpdateBundleMetadataVariables,
-    UpdateBundleMetadataContext
-  >({
+  return useMutation<BundleGetResponse, unknown, UpdateBundleMetadataVariables>({
     mutationKey: [MUTATION_KEYS.updateBundleMetadata, bundleId],
     mutationFn: async (variables) => {
       const { suppressToast: _suppressToast, ...body } = variables;
-      const response = await apiClient.put(`/api/bundles/manage/${bundleId}/metadata`, body);
+      const response = await apiClient.patch(`/api/bundles/manage/${bundleId}/metadata`, body);
       return v.parse(BundleGetResponseSchema, response.data);
-    },
-    onMutate: async (variables) => {
-      const { suppressToast: _suppressToast, ...body } = variables;
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.bundlePrivate(bundleId) });
-      const previous = queryClient.getQueryData<BundleGetResponse | undefined>(
-        QUERY_KEYS.bundlePrivate(bundleId),
-      );
-      queryClient.setQueryData<BundleGetResponse>(QUERY_KEYS.bundlePrivate(bundleId), (old) =>
-        old ? { ...old, ...body } : old,
-      );
-      return { previous };
     },
     onSuccess: (data, _variables) => {
       queryClient.setQueryData(QUERY_KEYS.bundlePrivate(bundleId), data);
     },
-    onError: (_err, _body, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(QUERY_KEYS.bundlePrivate(bundleId), context.previous);
-      }
+    onError: (_err) => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.bundlePrivate(bundleId) });
       handleApiError(_err);
     },
   });

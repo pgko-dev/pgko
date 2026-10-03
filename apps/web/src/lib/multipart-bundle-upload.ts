@@ -9,6 +9,7 @@ import {
 
 import { apiClient } from "@/lib/api";
 
+import { retryUploadRequest } from "./upload-request";
 import { pollUploadSession } from "./upload-session-polling";
 
 const CONCURRENCY = 3;
@@ -203,15 +204,29 @@ export async function uploadMultipartBundle(
   try {
     onPhaseChange?.("uploading");
     onProgress?.(0);
-    const createResponse = await apiClient.post("/api/bundles/upload-sessions", {
-      kind,
-      currentBundleId,
-      fileName: file.name,
-      contentType: file.type || "application/zip",
-      fileBytes: file.size,
-    });
+    const idempotencyKey = crypto.randomUUID();
+    const createResponse = await retryUploadRequest(
+      () =>
+        apiClient.post(
+          "/api/bundles/upload-sessions",
+          {
+            kind,
+            currentBundleId,
+            fileName: file.name,
+            contentType: file.type || "application/zip",
+            fileBytes: file.size,
+          },
+          { headers: { "Idempotency-Key": idempotencyKey }, signal },
+        ),
+      signal,
+    );
     const created = v.parse(CreateBundleUploadSessionResponseSchema, createResponse.data);
     sessionId = created.sessionId;
+    if (created.status !== "uploading") {
+      processingStarted = true;
+      onPhaseChange?.("processing");
+      return await pollUploadSession(sessionId, signal);
+    }
 
     const completedParts = await uploadAllParts(
       file,
@@ -220,12 +235,17 @@ export async function uploadMultipartBundle(
       transferController.signal,
       onProgress,
     );
-    const completeResponse = await apiClient.post(
-      `/api/bundles/upload-sessions/${sessionId}/complete`,
-      { parts: completedParts },
+    processingStarted = true;
+    const completeResponse = await retryUploadRequest(
+      () =>
+        apiClient.post(
+          `/api/bundles/upload-sessions/${sessionId}/complete`,
+          { parts: completedParts },
+          { signal },
+        ),
+      signal,
     );
     const completed = v.parse(BundleUploadSessionResponseSchema, completeResponse.data);
-    processingStarted = true;
     onProgress?.(100);
     onPhaseChange?.("processing");
     if (completed.status === "completed" && completed.bundle) return completed.bundle;

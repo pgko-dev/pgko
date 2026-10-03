@@ -9,7 +9,9 @@ test("extracts localized image errors from Elysia validation responses", () => {
     extractTranslationKeys({
       response: {
         data: {
-          errors: [{ message: 't:["vali.image.invalidContent"]' }],
+          code: "validationFailed",
+          message: "api.error.unknown",
+          errors: [{ path: "image", message: 't:["vali.image.invalidContent"]' }],
         },
       },
     }),

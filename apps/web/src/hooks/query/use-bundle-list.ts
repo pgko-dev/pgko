@@ -7,15 +7,24 @@ import { BundleListResponseSchema } from "@pgko-dev/schema";
 import { apiClient } from "@/lib/api.ts";
 import { QUERY_KEYS } from "@/lib/query-keys.ts";
 
-export const useBundleList = (filters: BundleListQuery, options?: { enabled?: boolean }) => {
+export const useBundleList = (
+  filters: BundleListQuery,
+  options?: { enabled?: boolean; account?: boolean },
+) => {
+  const account =
+    options?.account ??
+    Boolean(filters.draftsOnly || filters.collaborationsOnly || filters.collaborationStatus);
   return useInfiniteQuery({
-    queryKey: QUERY_KEYS.bundleList(filters),
+    queryKey: QUERY_KEYS.bundleList(filters, account),
     placeholderData: (
       previousData: InfiniteData<BundleListResponse, string | undefined> | undefined,
       previousQuery,
     ) => {
-      const previousFilters = previousQuery?.queryKey[1] as BundleListQuery | undefined;
+      const previousFilters = previousQuery?.queryKey[1] as
+        | (BundleListQuery & { account?: boolean })
+        | undefined;
       const sameScope =
+        previousFilters?.account === account &&
         previousFilters?.userId === filters.userId &&
         previousFilters?.limit === filters.limit &&
         previousFilters?.draftsOnly === filters.draftsOnly &&
@@ -28,7 +37,7 @@ export const useBundleList = (filters: BundleListQuery, options?: { enabled?: bo
     queryFn: async ({ pageParam, signal }) => {
       const params: Record<string, string> = {};
       if (filters.q) params.q = filters.q;
-      if (filters.userId) params.userId = filters.userId;
+      if (!account && filters.userId) params.userId = filters.userId;
       if (filters.sort) params.sort = filters.sort;
       if (filters.order) params.order = filters.order;
       if (pageParam) params.cursor = pageParam;
@@ -37,7 +46,10 @@ export const useBundleList = (filters: BundleListQuery, options?: { enabled?: bo
       if (filters.limit != null) params.limit = String(filters.limit);
       if (filters.collaborationStatus) params.collaborationStatus = filters.collaborationStatus;
 
-      const response = await apiClient.get("/api/bundles", { params, signal });
+      const response = await apiClient.get(account ? "/api/bundles/manage" : "/api/bundles", {
+        params,
+        signal,
+      });
       return v.parse(BundleListResponseSchema, response.data);
     },
     initialPageParam: undefined as string | undefined,
