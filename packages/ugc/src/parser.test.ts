@@ -13,6 +13,23 @@ const validHeader = [
   "@CONST\t1",
 ].join("\n");
 
+test("keeps exact music, jacket, and background references", async () => {
+  const header = [
+    validHeader,
+    "@BGM\t../song.ogg",
+    "@JACKET\tcover.png",
+    "@BGIMG\tbackground.mp4",
+    "@FLDIMG\tfield.png",
+    "@ENDHEAD",
+  ].join("\n");
+  const parsed = await parseUgc(new Response(header).body!);
+
+  expect(parsed.header.bgm).toBe("../song.ogg");
+  expect(parsed.header.jacket).toBe("cover.png");
+  expect(parsed.header.bgImg).toBe("background.mp4");
+  expect(parsed.header.fldImg).toBe("field.png");
+});
+
 test("stops reading and cancels after ENDHEAD, without consuming a large chart body", async () => {
   let reads = 0;
   let canceled = false;
