@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import {
   CANVAS_HEIGHT,
@@ -11,8 +11,9 @@ import {
   createLayout,
   hitTestTick,
   tickY,
+  type PreviewColumn,
 } from "@pgko.dev/ugc-render";
-import { ChartPainter } from "@pgko.dev/ugc-render/canvas";
+import { ChartPainter, type ChartRenderOptions } from "@pgko.dev/ugc-render/canvas";
 
 import { ScrollAreaCorner, ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,51 @@ const MAX_SURFACE_BYTES = 64 * 1024 * 1024;
 const OVERVIEW_SCALE = 0.5;
 const MIN_CANVAS_HEIGHT = NOTE_PADDING * 2 + LOOK_AHEAD + 1;
 const PLAYBACK_FOCUS = 0.382;
+
+const OverviewColumn = memo(function OverviewColumn({
+  painter,
+  column,
+  height,
+  scale,
+  ratio,
+  options,
+}: Readonly<{
+  painter: ChartPainter;
+  column: PreviewColumn;
+  height: number;
+  scale: number;
+  ratio: number;
+  options: ChartRenderOptions;
+}>) {
+  const surface = useRef<HTMLCanvasElement>(null);
+  const width = COLUMN_WIDTH * scale;
+
+  useLayoutEffect(() => {
+    const canvas = surface.current!;
+    canvas.width = Math.floor(width * ratio);
+    canvas.height = Math.floor(height * ratio);
+    const context = canvas.getContext("2d")!;
+    context.scale(scale * ratio, scale * ratio);
+    painter.paint(context, column, scale, options);
+  }, [painter, column, width, height, scale, ratio, options]);
+
+  useLayoutEffect(() => {
+    const canvas = surface.current!;
+    return () => {
+      canvas.width = 0;
+      canvas.height = 0;
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={surface}
+      aria-hidden="true"
+      data-column={column.index}
+      style={{ position: "absolute", left: column.index * width, width, height }}
+    />
+  );
+});
 
 export function OverviewViewport({
   chart,
@@ -56,10 +102,19 @@ export function OverviewViewport({
   );
   const painter = useMemo(() => new ChartPainter(chart, layout), [chart, layout]);
   const columnWidth = COLUMN_WIDTH * scale;
-  const first = Math.max(0, Math.floor(window.left / columnWidth) - 1);
-  const last = Math.min(
-    layout.columns.length - 1,
-    Math.ceil((window.left + window.width) / columnWidth),
+  const left = Math.min(
+    window.left,
+    Math.max(0, layout.columns.length * columnWidth - window.width),
+  );
+  const first = Math.max(0, Math.floor(left / columnWidth) - 1);
+  const last = Math.min(layout.columns.length - 1, Math.ceil((left + window.width) / columnWidth));
+  const ratio = Math.min(
+    globalThis.devicePixelRatio || 1,
+    2,
+    Math.sqrt(
+      MAX_SURFACE_BYTES /
+        ((last - first + 1) * COLUMN_WIDTH * layout.canvasHeight * scale * scale * 4),
+    ),
   );
   const active = columnAtTick(layout, tick);
 
@@ -96,48 +151,6 @@ export function OverviewViewport({
     element.addEventListener("wheel", wheel, { passive: false });
     return () => element.removeEventListener("wheel", wheel);
   }, [playing]);
-
-  useEffect(() => {
-    const host = tiles.current!;
-    const count = last - first + 1;
-    const ratio = Math.min(
-      globalThis.devicePixelRatio || 1,
-      2,
-      Math.sqrt(
-        MAX_SURFACE_BYTES / (count * COLUMN_WIDTH * layout.canvasHeight * scale * scale * 4),
-      ),
-    );
-    const canvases: HTMLCanvasElement[] = [];
-    let cancelled = false;
-    let next = first;
-    let timer: ReturnType<typeof setTimeout>;
-    function paintNext() {
-      if (cancelled || next > last) return;
-      const column = layout.columns[next++];
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.floor(COLUMN_WIDTH * scale * ratio);
-      canvas.height = Math.floor(layout.canvasHeight * scale * ratio);
-      canvas.style.cssText = `position:absolute;left:${column.index * columnWidth}px;width:${columnWidth}px;height:${layout.canvasHeight * scale}px`;
-      canvas.setAttribute("aria-hidden", "true");
-      canvas.dataset.column = String(column.index);
-      const context = canvas.getContext("2d")!;
-      context.scale(scale * ratio, scale * ratio);
-      painter.paint(context, column, scale, options);
-      host.append(canvas);
-      canvases.push(canvas);
-      timer = setTimeout(paintNext, 0);
-    }
-    paintNext();
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      for (const canvas of canvases) {
-        canvas.remove();
-        canvas.width = 0;
-        canvas.height = 0;
-      }
-    };
-  }, [painter, layout, first, last, columnWidth, scale, options]);
 
   useLayoutEffect(() => {
     if (!playing) return;
@@ -230,6 +243,18 @@ export function OverviewViewport({
             height: layout.canvasHeight * scale,
           }}
         >
+          {/* Stable keys retain painted columns; new surfaces paint before the next frame. */}
+          {layout.columns.slice(first, last + 1).map((column) => (
+            <OverviewColumn
+              key={column.index}
+              painter={painter}
+              column={column}
+              height={layout.canvasHeight * scale}
+              scale={scale}
+              ratio={ratio}
+              options={options}
+            />
+          ))}
           {tick >= 0 && tick <= layout.endTick ? (
             <div
               data-slot="preview-cursor"

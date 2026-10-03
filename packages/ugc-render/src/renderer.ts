@@ -7,6 +7,7 @@ import {
   type ChartLayout,
   type PreviewColumn,
 } from "./layout.js";
+import { NoteGeometry, pointBound } from "./note-geometry.js";
 import { NoteIndex } from "./note-index.js";
 import { airColor, crushColor, innerWidthRatio, theme } from "./theme.js";
 // MargreteOnline appearance adapted for immutable beatmap columns; see THIRD_PARTY_NOTICES.md.
@@ -18,6 +19,8 @@ type Vertex = readonly [number, number];
 const LABEL_SIZE = 10;
 const NOTE_BOTTOM_PADDING = 12;
 const AIR_LONG_KINDS = ["airHold", "airSlide", "airCrush"] as const;
+const SLIDE_GRADIENT = theme.slideGradient.toReversed();
+type TickWindow = { start: number; end: number };
 
 export type ChartRenderOptions = {
   showDirectionText?: boolean;
@@ -138,6 +141,8 @@ function ribbon(
   y: (tick: number) => number,
   colors: readonly string[],
   alpha: number,
+  startTick: number,
+  endTick: number,
   centerColor?: string,
 ) {
   if (points.length < 2) return;
@@ -151,7 +156,7 @@ function ribbon(
   if (colors.length === 1) context.fillStyle = colors[0];
   else {
     // Original endpoints remain unchanged when the canvas clips a column.
-    const gradient = context.createLinearGradient(0, y(points[0].tick), 0, y(points.at(-1)!.tick));
+    const gradient = context.createLinearGradient(0, y(startTick), 0, y(endTick));
     [0, 0.375, 0.625, 1].forEach((stop, index) => gradient.addColorStop(stop, colors[index]));
     context.fillStyle = gradient;
   }
@@ -178,10 +183,13 @@ function centerRibbon(
   context.fill();
 }
 
-function longBody(context: Context, note: ChartNote, y: (tick: number) => number) {
-  const points = [note, ...note.children];
-  if (note.kind === "hold") ribbon(context, points, y, theme.holdGradient, 0.672);
-  if (note.kind === "slide") slideBody(context, note, y);
+function longBody(
+  context: Context,
+  note: ChartNote,
+  geometry: NoteGeometry | undefined,
+  y: (tick: number) => number,
+  window: TickWindow,
+) {
   if (note.kind === "airHold") {
     line(
       context,
@@ -193,39 +201,39 @@ function longBody(context: Context, note: ChartNote, y: (tick: number) => number
       4,
     );
   }
-  if (note.kind === "airSlide") ribbon(context, points, y, [theme.airUp], 0.25, theme.slideCenter);
-  if (note.kind === "airCrush" && note.color !== "Z") {
-    centerRibbon(context, points, y, crushColor(note.color));
-  }
-}
-
-function slideBody(context: Context, note: ChartNote, y: (tick: number) => number) {
-  let segment: ChartPoint[] = [note];
-  for (const point of note.children) {
-    if (point.noLine) segment = [point];
-    else segment.push(point);
-    if (point.action || point === note.children.at(-1)) {
-      ribbon(context, segment, y, [...theme.slideGradient].reverse(), 0.672, theme.slideCenter);
-      segment = [point];
+  if (!geometry || (note.kind === "airCrush" && note.color === "Z")) return;
+  for (const { points, startTick, endTick } of geometry.visible(window.start, window.end)) {
+    if (note.kind === "airCrush") {
+      centerRibbon(context, points, y, crushColor(note.color));
+    } else {
+      const air = note.kind === "airSlide";
+      const slide = note.kind === "slide";
+      ribbon(
+        context,
+        points,
+        y,
+        air ? [theme.airUp] : slide ? SLIDE_GRADIENT : theme.holdGradient,
+        air ? 0.25 : 0.672,
+        startTick,
+        endTick,
+        air || slide ? theme.slideCenter : undefined,
+      );
     }
   }
 }
 
 export function interpolatePoint(note: ChartNote, tick: number): ChartPoint {
-  let previous: ChartPoint = note;
-  for (const next of note.children) {
-    if (next.tick > tick) {
-      const fraction = (tick - previous.tick) / (next.tick - previous.tick);
-      return {
-        ...previous,
-        tick,
-        lane: previous.lane + (next.lane - previous.lane) * fraction,
-        width: previous.width + (next.width - previous.width) * fraction,
-      };
-    }
-    previous = next;
-  }
-  return { ...previous, tick };
+  const index = pointBound(note.children, tick, true);
+  const previous = index === 0 ? note : note.children[index - 1];
+  const next = note.children[index];
+  if (!next) return { ...previous, tick };
+  const fraction = (tick - previous.tick) / (next.tick - previous.tick);
+  return {
+    ...previous,
+    tick,
+    lane: previous.lane + (next.lane - previous.lane) * fraction,
+    width: previous.width + (next.width - previous.width) * fraction,
+  };
 }
 
 function action(context: Context, point: ChartPoint, y: number, color: string, emphasized = false) {
@@ -247,6 +255,7 @@ function action(context: Context, point: ChartPoint, y: number, color: string, e
 export class ChartPainter {
   private readonly index: NoteIndex;
   private readonly paired = new Set<string>();
+  private readonly geometry = new Map<ChartNote, NoteGeometry>();
   private readonly chart: UgcChart;
   private readonly layout: ChartLayout;
   private readonly tempoLabels: [number, string][];
@@ -255,7 +264,12 @@ export class ChartPainter {
     this.chart = chart;
     this.layout = layout;
     this.index = new NoteIndex(chart.notes);
-    for (const note of chart.notes) if (note.pairId) this.paired.add(note.pairId);
+    for (const note of chart.notes) {
+      if (note.pairId) this.paired.add(note.pairId);
+      if (["hold", "slide", "airSlide", "airCrush"].includes(note.kind)) {
+        this.geometry.set(note, new NoteGeometry(note));
+      }
+    }
     const barTicks = new Map(layout.bars.map((bar) => [bar.index, bar.startTick]));
     this.tempoLabels = [...new Map(chart.tempos.map((tempo) => [tempo.tick, String(tempo.bpm)]))];
     for (const meter of chart.meters) {
@@ -351,6 +365,11 @@ export class ChartPainter {
     const top = y(end);
     const bottom = y(start);
     const notes = this.index.query(start - 3 / pixelsPerTick, end + 44 / pixelsPerTick);
+    // Include the full clipping margin and marker extent before trimming geometry.
+    const window = {
+      start: start - (NOTE_BOTTOM_PADDING + 44) / pixelsPerTick,
+      end: end + (NOTE_PADDING + 44) / pixelsPerTick,
+    };
     context.save();
     context.beginPath();
     context.rect(
@@ -360,20 +379,27 @@ export class ChartPainter {
       bottom - top + NOTE_PADDING + NOTE_BOTTOM_PADDING,
     );
     context.clip();
-    for (const note of notes)
-      if (note.kind === "hold" || note.kind === "slide") longBody(context, note, y);
+    for (const note of notes) {
+      if (note.kind === "hold" || note.kind === "slide") {
+        longBody(context, note, this.geometry.get(note), y, window);
+      }
+    }
     for (const kind of AIR_LONG_KINDS) {
-      for (const note of notes) if (note.kind === kind) longBody(context, note, y);
+      for (const note of notes) {
+        if (note.kind === kind) longBody(context, note, this.geometry.get(note), y, window);
+      }
     }
 
     // Margrete layers long markers below short notes; AIR pairing changes color, not depth.
     const markers = notes.toSorted((a, b) => b.width - a.width);
     airHeads(context, markers, y);
-    groundLongNotes(context, markers, y, this.paired, options.showControlPoints);
+    groundLongNotes(context, markers, y, this.paired, window, options.showControlPoints);
     groundShortNotes(context, markers, y);
     for (const kind of AIR_LONG_KINDS) {
       for (const note of markers) {
-        if (note.kind === kind) airActions(context, note, column, y, options.showControlPoints);
+        if (note.kind === kind) {
+          airActions(context, note, column, y, window, options.showControlPoints);
+        }
       }
     }
 
@@ -401,12 +427,16 @@ function groundLongNotes(
   notes: ChartNote[],
   y: (tick: number) => number,
   paired: ReadonlySet<string>,
+  window: TickWindow,
   showControlPoints = false,
 ) {
   for (const note of notes) {
     if (note.kind !== "hold" && note.kind !== "slide") continue;
     tap(context, note, note, y(note.tick), paired.has(note.id));
-    for (const child of note.children) {
+    const first = pointBound(note.children, window.start);
+    for (let index = first; index < note.children.length; index++) {
+      const child = note.children[index];
+      if (child.tick > window.end) break;
       if (child.action || showControlPoints) {
         tap(context, child, note, y(child.tick), paired.has(child.id), true);
       }
@@ -444,11 +474,16 @@ function airActions(
   note: ChartNote,
   column: PreviewColumn,
   y: (tick: number) => number,
+  window: TickWindow,
   showControlPoints = false,
 ) {
   if (note.kind === "airHold" || note.kind === "airSlide") {
-    const visible = note.children.filter((point) => point.action || showControlPoints);
-    for (const child of visible) action(context, child, y(child.tick), theme.airAction);
+    const first = pointBound(note.children, window.start);
+    for (let index = first; index < note.children.length; index++) {
+      const child = note.children[index];
+      if (child.tick > window.end) break;
+      if (child.action || showControlPoints) action(context, child, y(child.tick), theme.airAction);
+    }
   }
   if (note.kind !== "airCrush") return;
   if (note.interval !== 0 || showControlPoints) {
@@ -461,7 +496,10 @@ function airActions(
     );
   }
   if (showControlPoints) {
-    for (const child of note.children) {
+    const first = pointBound(note.children, window.start);
+    for (let index = first; index < note.children.length; index++) {
+      const child = note.children[index];
+      if (child.tick > window.end) break;
       action(context, { ...child, action: false }, y(child.tick), theme.crush);
     }
   }

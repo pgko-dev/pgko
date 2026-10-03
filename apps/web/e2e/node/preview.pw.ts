@@ -504,6 +504,100 @@ test("follow scrolls linearly within columns and across their boundaries", async
   }
 });
 
+test("landscape playback retains painted columns while crossing viewport boundaries", async ({
+  page,
+  browserName,
+}, info) => {
+  if (browserName === "chromium") {
+    const session = await page.context().newCDPSession(page);
+    await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  }
+  await audioRoutes(page);
+  await page.goto("/e2e/browser/preview.html");
+  await page.getByLabel("Beatmap (.ugc)").setInputFiles({
+    name: "continuous-overview.ugc",
+    mimeType: "text/plain",
+    buffer: Buffer.from("@BPM\t0'0\t960\n#63'0:t04"),
+  });
+  await page.getByRole("button", { name: "Load local files" }).click();
+  await setPortrait(page, false);
+  await setZoom(page, 1);
+  const field = page.getByRole("region", { name: /Beatmap columns/ });
+  await expect(field.locator('canvas[data-column="2"]')).toBeAttached();
+  test.skip(
+    await page.evaluate(() => typeof AudioContext === "undefined"),
+    "Web Audio unavailable",
+  );
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+
+  const result = await field.evaluate(async (element, columnWidth) => {
+    const host = element.querySelector<HTMLElement>('[data-slot="preview-columns"]')!;
+    let missingFrames = 0;
+    let visibleReplacements = 0;
+    let samples = 0;
+    let peakBytes = 0;
+    const initialLeft = element.scrollLeft;
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.removedNodes) {
+          if (!(node instanceof HTMLCanvasElement)) continue;
+          const left = Number(node.dataset.column) * columnWidth;
+          if (
+            left + columnWidth > element.scrollLeft &&
+            left < element.scrollLeft + element.clientWidth
+          ) {
+            visibleReplacements++;
+          }
+        }
+      }
+    });
+    observer.observe(host, { childList: true });
+    try {
+      const started = performance.now();
+      while (performance.now() - started < 3000) {
+        await new Promise(requestAnimationFrame);
+        const canvases = [...host.querySelectorAll("canvas")];
+        const painted = new Set(
+          canvases
+            .filter((canvas) => canvas.width && canvas.height)
+            .map((canvas) => Number(canvas.dataset.column)),
+        );
+        const first = Math.floor(element.scrollLeft / columnWidth);
+        const last = Math.ceil((element.scrollLeft + element.clientWidth) / columnWidth) - 1;
+        let missing = false;
+        for (let column = first; column <= last; column++) {
+          if (!painted.has(column)) missing = true;
+        }
+        if (missing) missingFrames++;
+        peakBytes = Math.max(
+          peakBytes,
+          canvases.reduce((sum, canvas) => sum + canvas.width * canvas.height * 4, 0),
+        );
+        samples++;
+      }
+    } finally {
+      observer.disconnect();
+    }
+    return {
+      samples,
+      missingFrames,
+      visibleReplacements,
+      peakBytes,
+      distance: element.scrollLeft - initialLeft,
+    };
+  }, COLUMN_WIDTH * 0.5);
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await info.attach("landscape-continuity", {
+    body: JSON.stringify(result),
+    contentType: "application/json",
+  });
+  expect(result.samples).toBeGreaterThan(20);
+  expect(result.distance).toBeGreaterThan(COLUMN_WIDTH);
+  expect(result.missingFrames).toBe(0);
+  expect(result.visibleReplacements).toBe(0);
+  expect(result.peakBytes).toBeLessThanOrEqual(64 * 1024 * 1024);
+});
+
 test("zoom reflows complete bars at fixed height and keeps seeking accurate", async ({
   page,
 }, info) => {
