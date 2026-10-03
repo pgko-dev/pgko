@@ -8,6 +8,8 @@ import {
   SkipBack,
   SkipForward,
   SlidersHorizontal,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { useId, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,13 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
 const formatTime = (seconds: number) =>
@@ -90,7 +85,7 @@ export function PreviewControls({
           <span className="text-muted-foreground"> / {formatTime(snapshot.duration)}</span>
         </span>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-between">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -175,28 +170,39 @@ function PreviewSettings({
   const [musicVolume, setMusicVolume] = useState(0.85);
   const [hitVolume, setHitVolume] = useState(0.5);
   const id = useId();
+  const previousZoom = PREVIEW_ZOOMS.findLast((value) => value < zoom);
+  const nextZoom = PREVIEW_ZOOMS.find((value) => value > zoom);
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <Label htmlFor={`${id}-zoom`}>{t("zoom")}</Label>
-        <Select
-          value={zoom}
-          onValueChange={(value) => {
-            if (value !== null) onZoomChange(value);
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          aria-label={t("zoomOut")}
+          title={t("zoomOut")}
+          disabled={previousZoom === undefined}
+          onClick={() => {
+            if (previousZoom !== undefined) onZoomChange(previousZoom);
           }}
         >
-          <SelectTrigger id={`${id}-zoom`} className="h-9 min-w-20" aria-label={t("zoom")}>
-            <SelectValue>{zoom * 100}%</SelectValue>
-          </SelectTrigger>
-          <SelectContent container={container}>
-            {PREVIEW_ZOOMS.map((value) => (
-              <SelectItem key={value} value={value}>
-                {value * 100}%
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <ZoomOut />
+        </Button>
+        <output aria-label={t("zoom")} className="min-w-11 text-center text-xs tabular-nums">
+          {zoom * 100}%
+        </output>
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          aria-label={t("zoomIn")}
+          title={t("zoomIn")}
+          disabled={nextZoom === undefined}
+          onClick={() => {
+            if (nextZoom !== undefined) onZoomChange(nextZoom);
+          }}
+        >
+          <ZoomIn />
+        </Button>
       </div>
       <Popover key={expanded ? "expanded" : "inline"}>
         <PopoverTrigger

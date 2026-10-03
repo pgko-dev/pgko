@@ -14,6 +14,8 @@ export const preview = {
   follow: "Follow",
   seek: "Playback position",
   zoom: "Zoom",
+  zoomIn: "Zoom in",
+  zoomOut: "Zoom out",
   settings: "Preview settings",
   portrait: "Portrait view",
   showControlPoints: "Show control points",

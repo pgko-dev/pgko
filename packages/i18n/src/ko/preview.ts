@@ -14,6 +14,8 @@ export const preview = {
   follow: "따라가기",
   seek: "재생 위치",
   zoom: "확대",
+  zoomIn: "확대",
+  zoomOut: "축소",
   settings: "미리보기 설정",
   portrait: "세로 보기",
   showControlPoints: "제어점 표시",

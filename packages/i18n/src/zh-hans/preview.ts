@@ -14,6 +14,8 @@ export const preview = {
   follow: "跟随",
   seek: "播放位置",
   zoom: "缩放",
+  zoomIn: "放大",
+  zoomOut: "缩小",
   settings: "预览设置",
   portrait: "竖屏视图",
   showControlPoints: "显示控制点",

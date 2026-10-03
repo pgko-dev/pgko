@@ -5,6 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { fixture } from "../fixtures/beatmap";
 
 import { wave } from "./audio";
+import { setZoom } from "./view";
 
 test.afterEach(async ({ page }, info) => {
   if (info.status === info.expectedStatus) return;
@@ -142,10 +143,7 @@ test("loads on demand, preserves video links, renders columns and follows playba
       Number(await page.getByRole("slider", { name: "Playback position" }).inputValue()),
     )
     .toBeGreaterThan(1);
-  const zoom = page.getByRole("combobox", { name: "Zoom", exact: true });
-  if (info.project.use.isMobile) await zoom.tap();
-  else await zoom.click();
-  await page.getByRole("option", { name: "100%", exact: true }).click();
+  await setZoom(page, 1);
   const field = page.getByRole("region", { name: /Beatmap columns/ });
   await page.getByRole("slider", { name: "Playback position" }).focus();
   await page.keyboard.press("End");

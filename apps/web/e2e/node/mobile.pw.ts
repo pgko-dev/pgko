@@ -6,7 +6,7 @@ import { FIELD_LEFT, FIELD_WIDTH, createPortraitLayout, parseUgcChart } from "ug
 import { fixture } from "../fixtures/beatmap";
 
 import { wave } from "./audio";
-import { setPortrait } from "./view";
+import { setPortrait, setZoom } from "./view";
 
 const source = "@TITLE\tPortrait fixture\n@BPM\t0'0\t120\n#0'0:t04\n#31'0:t84";
 
@@ -118,8 +118,7 @@ test("portrait scrolls one continuous track vertically and seeks at an independe
   await follow.click();
   await expectCursor(field);
 
-  await page.getByRole("combobox", { name: "Zoom", exact: true }).click();
-  await page.getByRole("option", { name: "100%", exact: true }).click();
+  await setZoom(page, 1);
   await expectCursor(field);
   await expect
     .poll(() => field.evaluate((element) => element.scrollHeight - element.clientHeight))
@@ -134,6 +133,13 @@ test("portrait scrolls one continuous track vertically and seeks at an independe
   expect(await player.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
   const controls = player.locator('[data-slot="preview-controls"]');
   expect(await controls.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
+  const controlsBounds = (await controls.boundingBox())!;
+  for (const group of await controls.locator(":scope > div:last-child > div").all()) {
+    const bounds = (await group.boundingBox())!;
+    expect(
+      Math.abs(bounds.x + bounds.width / 2 - (controlsBounds.x + controlsBounds.width / 2)),
+    ).toBeLessThan(1);
+  }
   await player.screenshot({ path: info.outputPath("portrait-mobile.png") });
   await expectCursor(field);
   await expect

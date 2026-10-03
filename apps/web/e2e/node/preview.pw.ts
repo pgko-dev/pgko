@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { CONTENT_HEIGHT, FIELD_HEIGHT, FIELD_LEFT, NOTE_PADDING, PREVIEW_ZOOMS } from "ugc-render";
 
 import { wave } from "./audio";
-import { setPortrait } from "./view";
+import { setPortrait, setZoom } from "./view";
 
 const opus = await readFile(new URL("../fixtures/tone.opus", import.meta.url));
 
@@ -180,8 +180,7 @@ test("renders columns, follows playback and releases canvases", async ({ page },
   expect(
     Number(await page.getByRole("slider", { name: "Playback position" }).inputValue()),
   ).toBeGreaterThan(1);
-  await page.getByRole("combobox", { name: "Zoom", exact: true }).click();
-  await page.getByRole("option", { name: "100%", exact: true }).click();
+  await setZoom(page, 1);
   const field = page.getByRole("region", { name: /Beatmap columns/ });
   await page.getByRole("slider", { name: "Playback position" }).focus();
   await page.keyboard.press("End");
@@ -332,8 +331,7 @@ test("follow keeps the cursor visible and wheel scrolling can be restored", asyn
   });
   await page.getByRole("button", { name: "Load local files" }).click();
   await setPortrait(page, false);
-  await page.getByRole("combobox", { name: "Zoom", exact: true }).click();
-  await page.getByRole("option", { name: "100%", exact: true }).click();
+  await setZoom(page, 1);
   const field = page.getByRole("region", { name: /Beatmap columns/ });
   const next = page.getByRole("button", { name: "Next bar" });
   const cursor = page.locator('[data-slot="preview-cursor"]');
@@ -412,7 +410,7 @@ test("zoom reflows complete bars at fixed height and keeps seeking accurate", as
   await page.getByRole("button", { name: "Load local files" }).click();
   const field = page.getByRole("region", { name: /Beatmap columns/ });
   const position = page.getByRole("slider", { name: "Playback position" });
-  const zoom = page.getByRole("combobox", { name: "Zoom", exact: true });
+  const zoom = page.getByRole("status", { name: "Zoom", exact: true });
   await setPortrait(page, false);
   await expect(field).toBeVisible();
   const height = (await field.boundingBox())!.height;
@@ -421,13 +419,15 @@ test("zoom reflows complete bars at fixed height and keeps seeking accurate", as
     .first()
     .evaluate((element) => element.getBoundingClientRect().width);
   await page.getByRole("button", { name: "Next bar" }).click();
+  await expect(page.getByRole("button", { name: "Zoom out", exact: true })).toBeDisabled();
   for (const value of PREVIEW_ZOOMS) {
-    await zoom.click();
-    await page.getByRole("option", { name: `${value * 100}%`, exact: true }).click();
+    await setZoom(page, value);
+    await expect(zoom).toHaveText(`${value * 100}%`);
     expect((await field.boundingBox())!.height).toBe(height);
     expect(await field.evaluate((element) => element.scrollHeight)).toBe(height);
     await expect(position).toHaveValue("1.5");
   }
+  await expect(page.getByRole("button", { name: "Zoom in", exact: true })).toBeDisabled();
   const packedWidth = await field
     .locator('[data-slot="preview-columns"]')
     .evaluate((element) => Number.parseFloat(element.style.width));
@@ -442,8 +442,8 @@ test("zoom reflows complete bars at fixed height and keeps seeking accurate", as
   });
   await expect(position).toHaveValue("3");
   await field.screenshot({ path: info.outputPath("zoom-reflow.png") });
-  await zoom.click();
-  await page.getByRole("option", { name: "50%", exact: true }).click();
+  await setZoom(page, 0.5);
+  await expect(page.getByRole("button", { name: "Zoom out", exact: true })).toBeDisabled();
   await expect(position).toHaveValue("3");
   await expect(field.locator('canvas[data-column="1"]')).toHaveCount(0);
   expect(await field.evaluate((element) => element.scrollLeft)).toBe(0);

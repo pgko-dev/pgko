@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 import { FIELD_LEFT, LOOK_AHEAD, NOTE_PADDING } from "ugc-render";
 
 import { wave } from "./audio";
-import { setPortrait } from "./view";
+import { setPortrait, setZoom } from "./view";
 
 test("editor metadata and variable-meter air holds load and seek without warnings", async ({
   page,
@@ -208,11 +208,14 @@ test("styled settings work with keyboard input and in expanded mode", async ({ p
   await expect
     .poll(() => field.evaluate((element) => element.scrollHeight - element.clientHeight))
     .toBe(0);
-  const zoom = page.getByRole("combobox", { name: "Zoom", exact: true });
-  await zoom.click();
-  await expect(player.getByRole("option", { name: "125%", exact: true })).toBeVisible();
-  await player.getByRole("option", { name: "125%", exact: true }).click();
-  await expect(zoom.locator('[data-slot="select-value"]')).toHaveText("125%");
+  const zoom = page.getByRole("status", { name: "Zoom", exact: true });
+  await setZoom(page, 1);
+  await page.getByRole("button", { name: "Zoom in", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(zoom).toHaveText("125%");
+  await page.getByRole("button", { name: "Zoom out", exact: true }).focus();
+  await page.keyboard.press("Space");
+  await expect(zoom).toHaveText("100%");
   const settings = player.getByRole("button", { name: "Preview settings" });
   const credits = player.getByRole("link", { name: "Credits and licenses" });
   await expect(credits).toBeHidden();
@@ -272,7 +275,7 @@ test("expanded fallback fills available height, repacks on resize and restores i
   const field = page.getByRole("region", { name: /Beatmap columns/ });
   const position = page.getByRole("slider", { name: "Playback position" });
   const expand = page.getByRole("button", { name: "Expand / restore" });
-  const zoom = page.getByRole("combobox", { name: "Zoom", exact: true });
+  const zoom = page.getByRole("status", { name: "Zoom", exact: true });
   await expect(field.locator("canvas").first()).toBeVisible();
   const inlineHeight = (await field.boundingBox())!.height;
   await page.getByRole("button", { name: "Next bar" }).click();
@@ -298,8 +301,7 @@ test("expanded fallback fills available height, repacks on resize and restores i
   await expect.poll(packedWidth).toBeGreaterThan(tallWidth);
   await expect(position).toHaveValue("1.5");
 
-  await zoom.click();
-  await page.getByRole("option", { name: "200%", exact: true }).click();
+  await setZoom(page, 2);
   for (const height of [680, 1200]) {
     await page.setViewportSize({ width: 1100, height });
     await expect
@@ -347,5 +349,5 @@ test("expanded fallback fills available height, repacks on resize and restores i
   await expand.click();
   await expect.poll(async () => (await field.boundingBox())!.height).toBe(inlineHeight);
   expect(Number(await position.inputValue())).toBeCloseTo(3, 1);
-  await expect(zoom.locator('[data-slot="select-value"]')).toHaveText("200%");
+  await expect(zoom).toHaveText("200%");
 });
