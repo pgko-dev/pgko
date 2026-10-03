@@ -4,11 +4,22 @@ import * as v from "valibot";
 
 import {
   AdminSetBundleVisibilityBodySchema,
+  AssetReferencesSchema,
   BundleListQuerySchema,
   BundleUpdateMetadataBodySchema,
   BundleVisibilitySchema,
   CreateBundleUploadSessionBodySchema,
 } from "../bundle.js";
+
+test("asset references strip legacy backgrounds and preserve supported references", () => {
+  const bgm = { filePath: "song.ogg", resolvedPath: "folder/song.ogg", exists: true };
+  const jacket = { filePath: "cover.png", resolvedPath: "folder/cover.png", exists: true };
+
+  expect(v.parse(AssetReferencesSchema, { bgm, jacket, bgImg: jacket, fldImg: jacket })).toEqual({
+    bgm,
+    jacket,
+  });
+});
 
 describe("BundleVisibilitySchema", () => {
   test("accepts the three visibility values", () => {

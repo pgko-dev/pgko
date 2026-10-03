@@ -19,8 +19,6 @@ export type AssetReference = v.InferOutput<typeof AssetReferenceSchema>;
 export const AssetReferencesSchema = v.object({
   bgm: v.optional(AssetReferenceSchema),
   jacket: v.optional(AssetReferenceSchema),
-  fldImg: v.optional(AssetReferenceSchema),
-  bgImg: v.optional(AssetReferenceSchema),
 });
 export type AssetReferences = v.InferOutput<typeof AssetReferencesSchema>;
 
