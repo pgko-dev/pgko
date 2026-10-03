@@ -4,13 +4,15 @@
 
 **Based on MargreteOnline by inonote**
 
-https://github.com/inonote/MargreteOnline
+[MargreteOnline source](https://github.com/inonote/MargreteOnline).
 
 Upstream declares MIT in [package.json](https://github.com/inonote/MargreteOnline/blob/master/package.json)
 and supplies no separate copyright notice.
 
-The note geometry, palette, gradients, outlines and drawing order in `renderer.ts`
-and `theme.ts` adapt MargreteOnline's Canvas renderer.
+The note geometry, palette, gradients, outlines, and drawing order in
+[`src/renderer.ts`](https://github.com/pgko-dev/pgko/blob/main/packages/ugc-render/src/renderer.ts)
+and [`src/theme.ts`](https://github.com/pgko-dev/pgko/blob/main/packages/ugc-render/src/theme.ts) adapt
+MargreteOnline's Canvas renderer.
 
 ---
 

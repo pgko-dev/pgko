@@ -2,30 +2,47 @@
 
 Public applications and shared packages for [pgko](https://pgko.dev/).
 
-| Path                         | Contents               |
-| ---------------------------- | ---------------------- |
-| [apps/web](apps/web)         | Frontend               |
-| [apps/openapi](apps/openapi) | API reference          |
-| [apps/worker](apps/worker)   | Cloudflare Worker      |
-| [packages](packages)         | Public shared packages |
+| Path                                   | Contents                                                      |
+| -------------------------------------- | ------------------------------------------------------------- |
+| [apps/web](apps/web/README.md)         | React frontend                                                |
+| [apps/openapi](apps/openapi/README.md) | Public API reference                                          |
+| [apps/worker](apps/worker/README.md)   | Crawler previews                                              |
+| [packages](docs/packages.md)           | Shared validation, translations, helpers, and chart rendering |
 
-## Development
+## Prerequisites
 
-Use Bun 1.4.2, Node.js 24, and Git LFS. Run commands from this root:
+Bun, Node.js, and Git LFS. Tool versions are maintained in [package.json](package.json) and [CI workflows](.github/workflows).
+
+## Quick start
+
+Run from this repository's root:
 
 ```sh
 git lfs pull
 bun ci --ignore-scripts
+cp apps/web/.env.development.example apps/web/.env.development.local
 bun run dev
-bun run check
 ```
 
-`dev` watches shared packages and starts the frontend. Use `dev:worker` or `dev:openapi` for the other apps. Internal dependencies use `workspace:*`.
+Open [localhost:3001](http://localhost:3001). For local API access, start the API on port 3000.
 
-## Package releases
+## Common commands
 
-All eight shared packages publish under `@pgko.dev`. Packages release together for external consumers. Run `bun run version:packages <version>` and `bun run release:check`, then commit and push a matching `v<version>` tag. Prereleases use `next`.
+| Command                  | Purpose                                                        |
+| ------------------------ | -------------------------------------------------------------- |
+| `bun run dev`            | Watch shared packages and start the frontend                   |
+| `bun run dev:worker`     | Watch shared packages and start the Worker                     |
+| `bun run dev:openapi`    | Build and preview the API reference                            |
+| `bun run build`          | Build all packages and applications                            |
+| `bun run check`          | Check dependencies, types, lint, formatting, tests, and builds |
+| `bun run check:packages` | Build, type-check, and test shared packages                    |
+| `bun run fmt:w`          | Format the workspace                                           |
 
-## License
+## Documentation
 
-[MIT](LICENSE).
+- [Development and browser tests](docs/development.md)
+- [Package exports and usage notes](docs/packages.md)
+- [Package releases](docs/releases.md)
+- [Application deployment](docs/deployment.md)
+
+[MIT license](LICENSE).
