@@ -83,6 +83,7 @@ export function PreviewPlayer({
       timing,
       hits,
       musicUrl,
+      musicMode: "auto",
       tapUrl: "/assets/tap.wav",
       onChange: (state) => {
         if (!active) return;
@@ -115,14 +116,14 @@ export function PreviewPlayer({
   }, [pauseSignal]);
   useEffect(() => {
     if (snapshot.state !== "playing") return;
-    let frame: number;
-    const update = () => {
-      setPosition(transport.current?.position ?? 0);
-      frame = requestAnimationFrame(update);
-    };
-    frame = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(frame);
+    const timer = setInterval(() => setPosition(transport.current?.presentationPosition ?? 0), 100);
+    return () => clearInterval(timer);
   }, [snapshot.state]);
+
+  const readTick = useCallback(
+    () => timing.secondsToTick(transport.current?.presentationPosition ?? 0),
+    [timing],
+  );
 
   useEffect(() => {
     const element = panel.current;
@@ -252,6 +253,7 @@ export function PreviewPlayer({
             expanded={expanded || fitted}
             portrait={portrait}
             tick={timing.secondsToTick(position)}
+            readTick={readTick}
             playing={snapshot.state === "playing"}
             onSeek={seekTick}
             label={t("beatmapRegion")}

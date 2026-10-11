@@ -232,7 +232,9 @@ test("cross-origin Opus reaches Web Audio, seeks and releases on close", async (
   await expect
     .poll(() =>
       page.evaluate(
-        () => (window as unknown as { previewMedia: HTMLAudioElement }).previewMedia.currentTime,
+        () =>
+          (window as unknown as { previewMusic: { offset: number }[] }).previewMusic.at(-1)
+            ?.offset ?? 0,
       ),
     )
     .toBeGreaterThan(1.8);

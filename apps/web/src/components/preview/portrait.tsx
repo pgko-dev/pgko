@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import {
   CANVAS_HEIGHT,
@@ -10,12 +10,13 @@ import {
   portraitScrollTop,
   tickY,
 } from "@pgko.dev/ugc-render";
-import { ChartPainter } from "@pgko.dev/ugc-render/canvas";
+import { ChartPainter, PortraitTiles } from "@pgko.dev/ugc-render/canvas";
 
 import { ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 import { PreviewScrollArea } from "./scroll-area";
+import { usePixelRatio, usePlaybackFrame } from "./use-playback-frame";
 import type { PreviewViewportProps } from "./viewport";
 
 export function PortraitViewport({
@@ -23,6 +24,7 @@ export function PortraitViewport({
   zoom,
   expanded,
   tick,
+  readTick,
   playing,
   onSeek,
   label,
@@ -30,6 +32,7 @@ export function PortraitViewport({
 }: PreviewViewportProps) {
   const scroll = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const cursor = useRef<HTMLDivElement>(null);
   const drag = useRef<{
     x: number;
     y: number;
@@ -38,14 +41,19 @@ export function PortraitViewport({
     pointer: number;
   } | null>(null);
   const [size, setSize] = useState({ width: 320, height: CANVAS_HEIGHT * 0.5 });
-  const [top, setTop] = useState(0);
+  const top = useRef(0);
   const view = useMemo(
     () => createPortraitLayout(chart, zoom, size.width, size.height),
     [chart, zoom, size],
   );
   const previousView = useRef<typeof view | null>(null);
   const painter = useMemo(() => new ChartPainter(chart, view.layout), [chart, view]);
-  const column = useMemo(() => portraitColumn(view, top), [view, top]);
+  const pixelRatio = usePixelRatio();
+  const tiles = useMemo(
+    () => new PortraitTiles(painter, view, options, pixelRatio),
+    [painter, view, options, pixelRatio],
+  );
+  useLayoutEffect(() => () => tiles.dispose(), [tiles]);
 
   useLayoutEffect(() => {
     const element = scroll.current!;
@@ -65,37 +73,32 @@ export function PortraitViewport({
   useLayoutEffect(() => {
     const previous = previousView.current;
     previousView.current = view;
-    if (!playing && previous === view) return;
+    if (playing || previous === view) return;
 
     const element = scroll.current!;
     // Preserve the visible time when a paused view is resized or zoomed.
-    const anchorTick =
-      playing || !previous
-        ? tick
-        : (1 - Math.max(0, Math.min(top / previous.scrollRange, 1))) * previous.layout.endTick;
+    const anchorTick = !previous
+      ? tick
+      : (1 - Math.max(0, Math.min(top.current / previous.scrollRange, 1))) *
+        previous.layout.endTick;
     element.scrollTo({ top: portraitScrollTop(view, anchorTick), behavior: "instant" });
-    setTop(element.scrollTop);
-  }, [view, tick, playing, top]);
+    top.current = element.scrollTop;
+  }, [view, tick, playing]);
 
-  useLayoutEffect(() => {
-    const element = canvas.current!;
-    const ratio = Math.min(
-      globalThis.devicePixelRatio || 1,
-      2,
-      Math.sqrt((64 * 1024 * 1024) / (view.width * view.height * 4)),
-    );
-    const width = Math.floor(view.width * ratio);
-    const height = Math.floor(view.height * ratio);
-    if (element.width !== width) element.width = width;
-    if (element.height !== height) element.height = height;
-    const context = element.getContext("2d")!;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.fillStyle = "#000000";
-    context.fillRect(0, 0, view.width, view.height);
-    context.translate(view.offsetX, 0);
-    context.scale(view.scale, view.scale);
-    painter.paint(context, column, view.scale, { ...options, labelSize: 12 });
-  }, [painter, view, column, options]);
+  const draw = useCallback(
+    (currentTick: number) => {
+      const element = scroll.current!;
+      if (playing)
+        element.scrollTo({ top: portraitScrollTop(view, currentTick), behavior: "instant" });
+      top.current = element.scrollTop;
+      const column = tiles.paint(canvas.current!, top.current);
+      const marker = cursor.current!;
+      marker.style.display = currentTick >= 0 && currentTick <= view.layout.endTick ? "" : "none";
+      marker.style.top = `${tickY(column, currentTick) * view.scale - 0.5}px`;
+    },
+    [view, tiles, playing],
+  );
+  usePlaybackFrame(playing, tick, readTick, draw);
 
   useEffect(() => {
     const element = canvas.current!;
@@ -119,7 +122,9 @@ export function PortraitViewport({
         data-portrait="true"
         className="absolute inset-0 [touch-action:pan-y] overscroll-contain"
         style={playing ? { overflow: "hidden", touchAction: "none" } : undefined}
-        onScroll={(event) => setTop(event.currentTarget.scrollTop)}
+        onScroll={() => {
+          if (!playing) draw(tick);
+        }}
         onKeyDown={(event) => {
           if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(event.key)) {
             event.preventDefault();
@@ -175,21 +180,19 @@ export function PortraitViewport({
               data-column="0"
               style={{ display: "block", width: size.width, height: size.height }}
             />
-            {tick >= 0 && tick <= view.layout.endTick ? (
-              <div
-                data-slot="preview-cursor"
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  pointerEvents: "none",
-                  height: 1,
-                  background: "#ff0000",
-                  left: view.offsetX + FIELD_LEFT * view.scale,
-                  top: tickY(column, tick) * view.scale - 0.5,
-                  width: FIELD_WIDTH * view.scale,
-                }}
-              />
-            ) : null}
+            <div
+              ref={cursor}
+              data-slot="preview-cursor"
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                pointerEvents: "none",
+                height: 1,
+                background: "#ff0000",
+                left: view.offsetX + FIELD_LEFT * view.scale,
+                width: FIELD_WIDTH * view.scale,
+              }}
+            />
           </div>
         </div>
       </ScrollAreaViewport>

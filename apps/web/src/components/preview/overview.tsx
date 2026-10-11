@@ -1,4 +1,4 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import {
   CANVAS_HEIGHT,
@@ -19,6 +19,7 @@ import { ScrollAreaCorner, ScrollAreaViewport, ScrollBar } from "@/components/ui
 import { cn } from "@/lib/utils";
 
 import { PreviewScrollArea } from "./scroll-area";
+import { usePixelRatio, usePlaybackFrame } from "./use-playback-frame";
 import type { PreviewViewportProps } from "./viewport";
 
 const MAX_SURFACE_BYTES = 64 * 1024 * 1024;
@@ -76,6 +77,7 @@ export function OverviewViewport({
   zoom,
   expanded,
   tick,
+  readTick,
   playing,
   onSeek,
   label,
@@ -83,6 +85,7 @@ export function OverviewViewport({
 }: PreviewViewportProps) {
   const scroll = useRef<HTMLDivElement>(null);
   const tiles = useRef<HTMLDivElement>(null);
+  const cursor = useRef<HTMLDivElement>(null);
   const drag = useRef<{
     x: number;
     y: number;
@@ -109,14 +112,13 @@ export function OverviewViewport({
   const first = Math.max(0, Math.floor(left / columnWidth) - 1);
   const last = Math.min(layout.columns.length - 1, Math.ceil((left + window.width) / columnWidth));
   const ratio = Math.min(
-    globalThis.devicePixelRatio || 1,
+    usePixelRatio(),
     2,
     Math.sqrt(
       MAX_SURFACE_BYTES /
         ((last - first + 1) * COLUMN_WIDTH * layout.canvasHeight * scale * scale * 4),
     ),
   );
-  const active = columnAtTick(layout, tick);
 
   useEffect(() => {
     const element = scroll.current!;
@@ -152,23 +154,31 @@ export function OverviewViewport({
     return () => element.removeEventListener("wheel", wheel);
   }, [playing]);
 
-  useLayoutEffect(() => {
-    if (!playing) return;
+  const draw = useCallback(
+    (currentTick: number) => {
+      const active = columnAtTick(layout, currentTick);
+      const marker = cursor.current!;
+      marker.style.display = currentTick >= 0 && currentTick <= layout.endTick ? "" : "none";
+      marker.style.left = `${(active.index * COLUMN_WIDTH + FIELD_LEFT) * scale}px`;
+      marker.style.top = `${tickY(active, currentTick) * scale - 0.5}px`;
+      if (!playing) return;
+      const element = scroll.current!;
+      const progress = Math.max(
+        0,
+        Math.min(1, (currentTick - active.startTick) / (active.packedEndTick - active.startTick)),
+      );
+      // Center the cursor's sweep around the playback focus while scrolling linearly.
+      const cursorCenter = (FIELD_LEFT + FIELD_WIDTH / 2) * scale;
+      const focusOffset = element.clientWidth * PLAYBACK_FOCUS - cursorCenter + columnWidth / 2;
+      const targetLeft = Math.max(0, (active.index + progress) * columnWidth - focusOffset);
 
-    const element = scroll.current!;
-    const progress = Math.max(
-      0,
-      Math.min(1, (tick - active.startTick) / (active.packedEndTick - active.startTick)),
-    );
-    // Center the cursor's sweep around the playback focus while scrolling linearly.
-    const cursorCenter = (FIELD_LEFT + FIELD_WIDTH / 2) * scale;
-    const focusOffset = element.clientWidth * PLAYBACK_FOCUS - cursorCenter + columnWidth / 2;
-    const targetLeft = Math.max(0, (active.index + progress) * columnWidth - focusOffset);
-
-    if (targetLeft !== element.scrollLeft) {
-      element.scrollTo({ left: targetLeft, behavior: "instant" });
-    }
-  }, [active, tick, playing, columnWidth, window.width, scale]);
+      if (targetLeft !== element.scrollLeft) {
+        element.scrollTo({ left: targetLeft, behavior: "instant" });
+      }
+    },
+    [layout, playing, columnWidth, scale],
+  );
+  usePlaybackFrame(playing, tick, readTick, draw);
 
   return (
     <PreviewScrollArea
@@ -188,11 +198,19 @@ export function OverviewViewport({
         style={playing ? { overflow: "hidden", touchAction: "none" } : undefined}
         onScroll={() => {
           const element = scroll.current!;
-          setWindow((previous) => ({
-            ...previous,
-            left: element.scrollLeft,
-            width: element.clientWidth,
-          }));
+          setWindow((previous) => {
+            const nextLeft = element.scrollLeft;
+            const width = element.clientWidth;
+            if (
+              width === previous.width &&
+              Math.floor(nextLeft / columnWidth) === Math.floor(previous.left / columnWidth) &&
+              Math.ceil((nextLeft + width) / columnWidth) ===
+                Math.ceil((previous.left + width) / columnWidth)
+            ) {
+              return previous;
+            }
+            return { ...previous, left: nextLeft, width };
+          });
         }}
         onPointerDown={(event) => {
           if (playing) return;
@@ -255,22 +273,19 @@ export function OverviewViewport({
               options={options}
             />
           ))}
-          {tick >= 0 && tick <= layout.endTick ? (
-            <div
-              data-slot="preview-cursor"
-              aria-hidden="true"
-              style={{
-                pointerEvents: "none",
-                position: "absolute",
-                zIndex: 1,
-                height: 1,
-                background: "#ff0000",
-                left: (active.index * COLUMN_WIDTH + FIELD_LEFT) * scale,
-                top: tickY(active, tick) * scale - 0.5,
-                width: FIELD_WIDTH * scale,
-              }}
-            />
-          ) : null}
+          <div
+            ref={cursor}
+            data-slot="preview-cursor"
+            aria-hidden="true"
+            style={{
+              pointerEvents: "none",
+              position: "absolute",
+              zIndex: 1,
+              height: 1,
+              background: "#ff0000",
+              width: FIELD_WIDTH * scale,
+            }}
+          />
         </div>
       </ScrollAreaViewport>
       <ScrollBar orientation="horizontal" aria-disabled={playing} />
