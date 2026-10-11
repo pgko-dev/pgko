@@ -23,3 +23,14 @@ export function wave(duration = 8) {
     );
   return buffer;
 }
+
+/** Authored PCM clicks every half-second, with an initial silent half-second. */
+export function clickWave(duration = 66) {
+  const buffer = wave(duration);
+  const rate = 44100;
+  for (let index = 0; index < Math.round(rate * duration); index++) {
+    const time = index / rate;
+    if (time < 0.5 || time % 0.5 >= 0.008) buffer.writeInt16LE(0, 44 + index * 2);
+  }
+  return buffer;
+}

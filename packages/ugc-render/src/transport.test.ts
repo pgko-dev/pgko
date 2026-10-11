@@ -41,6 +41,8 @@ class FakeSource {
   static all: FakeSource[] = [];
   stopped = false;
   startAt = 0;
+  offset = 0;
+  stopAt?: number;
   buffer?: unknown;
   onended?: () => void;
   constructor() {
@@ -48,27 +50,38 @@ class FakeSource {
   }
   connect() {}
   disconnect() {}
-  start(time: number) {
+  start(time: number, offset = 0) {
     this.startAt = time;
+    this.offset = offset;
   }
-  stop() {
-    this.stopped = true;
+  stop(time?: number) {
+    this.stopAt = time;
+    if (time === undefined) this.stopped = true;
   }
 }
-class FakeContext {
+class FakeContext extends EventTarget {
   static latest: FakeContext;
   static decoded: Promise<unknown> = Promise.resolve({});
   currentTime = 0;
+  sampleRate = 48000;
+  baseLatency = 0;
+  outputLatency = 0;
+  state = "running";
+  timestamp = { contextTime: 0, performanceTime: 0 };
   destination = {};
   closed = false;
   constructor() {
+    super();
     FakeContext.latest = this;
   }
   createGain() {
     return { gain: { value: 1 }, connect() {} };
   }
+  getOutputTimestamp() {
+    return this.timestamp;
+  }
   createMediaElementSource() {
-    return { connect() {} };
+    return { connect() {}, disconnect() {} };
   }
   createBufferSource() {
     return new FakeSource();
@@ -101,7 +114,13 @@ afterEach(() => {
   globalThis.AudioContext = originalContext;
 });
 const waitForPump = () => new Promise((resolve) => setTimeout(resolve, 35));
-function engine(music = true, start = 0, end = 4, hits = [0, 0.1, 0.2, 1, 2, 3, 4]) {
+function engine(
+  music = true,
+  start = 0,
+  end = 4,
+  hits = [0, 0.1, 0.2, 1, 2, 3, 4],
+  automatic = false,
+) {
   const transport = new ChartTransport({
     timing: {
       leadIn: start,
@@ -111,7 +130,12 @@ function engine(music = true, start = 0, end = 4, hits = [0, 0.1, 0.2, 1, 2, 3, 
       secondsToTick: (seconds) => seconds,
     },
     hits,
-    musicUrl: music ? "https://example.test/music.opus" : undefined,
+    musicUrl: music
+      ? automatic
+        ? "data:audio/wav;base64,AA=="
+        : "https://example.test/music.opus"
+      : undefined,
+    musicMode: automatic ? "auto" : "streaming",
     tapUrl: "data:audio/wav;base64,AA==",
     onChange() {},
     onError(error) {
@@ -239,7 +263,7 @@ test("silent mode, lead-in and audio tail use the context clock", async () => {
   FakeContext.latest.currentTime = 1;
   expect(silent.position).toBe(1);
   silent.setRate(2);
-  await Promise.resolve();
+  await waitForPump();
   FakeContext.latest.currentTime = 1.5;
   expect(silent.position).toBe(2);
   silent.pause();
@@ -276,7 +300,7 @@ test("a mid-playback music error pauses and requires explicit silent continuatio
   await transport.play();
   expect(transport.snapshot().state).toBe("paused");
   transport.continueWithoutMusic();
-  await Promise.resolve();
+  await waitForPump();
   expect(transport.snapshot().state).toBe("playing");
   transport.dispose();
   expect(FakeContext.latest.closed).toBe(true);
@@ -308,7 +332,7 @@ test.each([true, false])("stops at the final bar even when music continues: %s",
   expect(FakeSource.all).toHaveLength(count);
 });
 
-test.each([1.95, 1.85])(
+test.each([1.95, 1.65])(
   "a final hold step sounds even when the preceding scheduler tick is at %s",
   async (previousTime) => {
     const prepared = prepareChart(new TextEncoder().encode("@BPM\t0'0\t120\n#0'0:h04\n#1920>s"));
@@ -349,7 +373,7 @@ test.each([0.5, 1, 2])(
     transport.setRate(rate);
     await transport.play();
 
-    const initialWindows = Math.min(18, Math.floor((0.1 + 1e-9) / hitWindow) + 1);
+    const initialWindows = Math.min(18, Math.floor((0.25 + 1e-9) / hitWindow) + 1);
     expect(FakeSource.all).toHaveLength(initialWindows);
     expect(FakeSource.all[0].startAt).toBe(hitWindow);
     for (let time = 0.05; time < 17 * hitWindow + 0.05; time += 0.05) {
@@ -367,11 +391,11 @@ test.each([0.5, 1, 2])(
 );
 
 test("a hit window spans scheduler batches and combines simultaneous hits", async () => {
-  const firstHit = 0.1 - hitWindow / 2;
+  const firstHit = 0.25 - hitWindow / 2;
   const boundary = firstHit + hitWindow;
   const transport = engine(false, 0, 4, [
     firstHit,
-    0.1 + hitWindow / 4,
+    0.25 + hitWindow / 4,
     boundary - hitWindow / 4,
     boundary,
     boundary,
@@ -389,21 +413,21 @@ test("a hit window spans scheduler batches and combines simultaneous hits", asyn
 test("overdue hits combine into one delayed sound without a catch-up burst", async () => {
   const transport = engine(false, 0, 4, [
     0,
-    0.15,
-    0.181,
-    0.182,
-    0.19,
-    0.2,
-    0.2 + hitWindow / 2,
-    0.2 + hitWindow,
+    0.3,
+    0.331,
+    0.332,
+    0.34,
+    0.35,
+    0.35 + hitWindow / 2,
+    0.35 + hitWindow,
   ]);
   await transport.play();
-  FakeContext.latest.currentTime = 0.2;
+  FakeContext.latest.currentTime = 0.35;
   await waitForPump();
 
   expect(FakeSource.all).toHaveLength(3);
-  expect(FakeSource.all[1].startAt).toBeCloseTo(0.2 + hitWindow, 9);
-  expect(FakeSource.all[2].startAt).toBeCloseTo(0.2 + 2 * hitWindow, 9);
+  expect(FakeSource.all[1].startAt).toBeCloseTo(0.35 + hitWindow, 9);
+  expect(FakeSource.all[2].startAt).toBeCloseTo(0.35 + 2 * hitWindow, 9);
 });
 
 test.each(["pause", "seek", "rate", "buffering"])(
@@ -451,4 +475,167 @@ test("replay clears a delayed final hit before starting a new window", async () 
   const replay = FakeSource.all.filter((source) => !source.stopped);
   expect(replay).toHaveLength(2);
   expect(replay[0].startAt).toBeCloseTo(0.05 + hitWindow, 9);
+});
+
+const decodedMusic = { duration: 2, length: 96000, numberOfChannels: 2 };
+
+test.each([-0.5, 0, 0.5])(
+  "buffered music and hits share an anchor with offset %s",
+  async (offset) => {
+    FakeContext.decoded = Promise.resolve(decodedMusic);
+    const transport = engine(true, offset, 4, [0, 0.2, 1], true);
+    await transport.play();
+    expect(transport.diagnostics.backend).toBe("buffered");
+    const [music, firstHit] = FakeSource.all;
+    expect(music.startAt).toBeCloseTo(0.05 + Math.max(0, offset), 9);
+    expect(music.offset).toBe(Math.max(0, -offset));
+    expect(firstHit.startAt).toBeCloseTo(0.05 + hitWindow, 9);
+    expect(music.stopAt).toBeCloseTo(4.05, 9);
+    FakeAudio.latest.currentTime = 50;
+    expect(transport.position).toBe(0);
+    FakeContext.latest.currentTime = 0.55;
+    expect(transport.position).toBeCloseTo(0.5, 9);
+    transport.seek(1.5);
+    await waitForPump();
+    expect(music.stopped).toBe(true);
+    const resumedMusic = FakeSource.all.findLast((source) => source.stopAt !== undefined)!;
+    if (1.5 - offset < 2) expect(resumedMusic.offset).toBe(1.5 - offset);
+    expect(transport.diagnostics.decodedBytes).toBe(768000);
+  },
+);
+
+test("buffered presentation compensates latency monotonically and resets on seek", async () => {
+  FakeContext.decoded = Promise.resolve(decodedMusic);
+  const transport = engine(true, 0, 4, [], true);
+  await transport.play();
+  FakeContext.latest.baseLatency = 0.01;
+  FakeContext.latest.outputLatency = 0.09;
+  FakeContext.latest.currentTime = 1.05;
+  expect(transport.position).toBeCloseTo(1, 9);
+  expect(transport.presentationPosition).toBeCloseTo(0.9, 9);
+  FakeContext.latest.outputLatency = 0.2;
+  expect(transport.presentationPosition).toBeCloseTo(0.9, 9);
+  transport.seek(0.2);
+  await waitForPump();
+  expect(transport.presentationPosition).toBeCloseTo(0.2, 9);
+  FakeContext.latest.state = "interrupted";
+  FakeContext.latest.dispatchEvent(new Event("statechange"));
+  expect(transport.snapshot().state).toBe("paused");
+  expect(FakeSource.all.every((source) => source.stopped)).toBe(true);
+});
+
+test("automatic mode preserves streaming rates and reuses the decoded track", async () => {
+  FakeContext.decoded = Promise.resolve(decodedMusic);
+  const transport = engine(true, 0, 4, [], true);
+  await transport.play();
+  transport.setRate(0.5);
+  await waitForPump();
+  expect(transport.diagnostics).toMatchObject({ backend: "streaming", fallbackReason: "rate" });
+  expect(FakeAudio.latest.preservesPitch).toBe(true);
+  expect(FakeAudio.latest.playbackRate).toBe(0.5);
+  transport.setRate(1);
+  await waitForPump();
+  expect(transport.diagnostics.backend).toBe("buffered");
+  transport.dispose();
+  expect(transport.diagnostics.decodedBytes).toBe(0);
+});
+
+test("buffered pause, repeated seeks, interruption and tail keep one decoded track", async () => {
+  FakeContext.decoded = Promise.resolve(decodedMusic);
+  const transport = engine(true, 0, 4, [0, 1, 2, 3], true);
+  await transport.play();
+  const firstMusic = FakeSource.all[0];
+  FakeContext.latest.currentTime = 0.55;
+  transport.pause();
+  expect(firstMusic.stopped).toBe(true);
+  expect(transport.position).toBeCloseTo(0.5, 9);
+  await transport.play();
+  expect(FakeSource.all.findLast((source) => source.stopAt !== undefined)?.offset).toBeCloseTo(
+    0.5,
+    9,
+  );
+
+  transport.seek(0.8);
+  transport.seek(1.2);
+  transport.seek(0.4);
+  await waitForPump();
+  const activeMusic = FakeSource.all.filter(
+    (source) => !source.stopped && source.stopAt !== undefined,
+  );
+  expect(activeMusic).toHaveLength(1);
+  expect(activeMusic[0].buffer).toBe(firstMusic.buffer);
+  expect(activeMusic[0].offset).toBe(0.4);
+
+  FakeContext.latest.state = "interrupted";
+  FakeContext.latest.dispatchEvent(new Event("statechange"));
+  expect(transport.snapshot().state).toBe("paused");
+  expect(FakeSource.all.every((source) => source.stopped)).toBe(true);
+  FakeContext.latest.state = "running";
+  await transport.play();
+  expect(transport.snapshot().state).toBe("playing");
+  transport.seek(3);
+  await waitForPump();
+  expect(
+    FakeSource.all.filter((source) => !source.stopped && source.stopAt !== undefined),
+  ).toHaveLength(0);
+  FakeContext.latest.currentTime += 0.55;
+  expect(transport.position).toBeCloseTo(3.5, 9);
+  expect(transport.diagnostics.backend).toBe("buffered");
+});
+
+test("valid output timestamps take precedence over latency estimates", async () => {
+  FakeContext.decoded = Promise.resolve(decodedMusic);
+  const transport = engine(true, 0, 4, [], true);
+  await transport.play();
+  FakeContext.latest.currentTime = 1.05;
+  FakeContext.latest.outputLatency = 0.7;
+  FakeContext.latest.timestamp = { contextTime: 0.9, performanceTime: performance.now() };
+  expect(transport.presentationPosition).toBeGreaterThanOrEqual(0.85);
+  expect(transport.presentationPosition).toBeLessThan(0.86);
+  FakeContext.latest.timestamp = { contextTime: 10, performanceTime: performance.now() };
+  expect(transport.presentationPosition).toBeLessThanOrEqual(transport.position);
+});
+
+test("buffered end waits for output presentation and preserves the final tap", async () => {
+  FakeContext.decoded = Promise.resolve(decodedMusic);
+  const transport = engine(true, 0, 1, [1], true);
+  await transport.play();
+  FakeContext.latest.currentTime = 0.9;
+  await waitForPump();
+  const finalHit = FakeSource.all.at(-1)!;
+  expect(finalHit.startAt).toBeCloseTo(1.05 + hitWindow, 9);
+  FakeContext.latest.outputLatency = 0.1;
+  FakeContext.latest.currentTime = 1.1;
+  await waitForPump();
+  expect(transport.snapshot().state).toBe("playing");
+  FakeContext.latest.currentTime = 1.16;
+  await waitForPump();
+  expect(transport.snapshot()).toMatchObject({ state: "paused", position: 1 });
+  expect(finalHit.stopped).toBe(false);
+});
+
+test("canceling buffered preparation cannot restart a paused or disposed player", async () => {
+  let resolveDecode!: (buffer: unknown) => void;
+  FakeContext.decoded = new Promise((resolve) => {
+    resolveDecode = resolve;
+  });
+  const transport = engine(true, 0, 4, [], true);
+  const play = transport.play();
+  transport.pause();
+  resolveDecode(decodedMusic);
+  await play;
+  expect(transport.snapshot().state).toBe("paused");
+  expect(FakeSource.all).toHaveLength(0);
+  await transport.play();
+  expect(transport.diagnostics.backend).toBe("buffered");
+  transport.dispose();
+  expect(FakeContext.latest.closed).toBe(true);
+});
+
+test("oversized music falls back to streaming without decoding music", async () => {
+  const transport = engine(true, 0, 4, [], true);
+  FakeAudio.latest.duration = 301;
+  await transport.play();
+  expect(transport.diagnostics).toMatchObject({ backend: "streaming", fallbackReason: "duration" });
+  expect(FakeAudio.latest.paused).toBe(false);
 });

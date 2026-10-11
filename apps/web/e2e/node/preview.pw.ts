@@ -13,6 +13,8 @@ import {
   PREVIEW_ZOOMS,
 } from "@pgko.dev/ugc-render";
 
+import type {} from "../fixtures/preview-state";
+
 import { wave } from "./audio";
 import { setPortrait, setZoom } from "./view";
 
@@ -68,7 +70,9 @@ test("large synthetic beatmap stays within the canvas memory budget", async ({ p
       .evaluateAll((nodes) =>
         nodes.reduce(
           (total, node) =>
-            total + (node as HTMLCanvasElement).width * (node as HTMLCanvasElement).height * 4,
+            total +
+            (node as HTMLCanvasElement).width * (node as HTMLCanvasElement).height * 4 +
+            Number((node as HTMLCanvasElement).dataset.cacheBytes ?? 0),
           0,
         ),
       );
@@ -243,7 +247,9 @@ test("cross-origin Opus reaches Web Audio, seeks and releases on close", async (
   await expect
     .poll(() =>
       page.evaluate(
-        () => (window as unknown as { previewMedia: HTMLAudioElement }).previewMedia.currentTime,
+        () =>
+          (window as unknown as { previewMusic: { offset: number }[] }).previewMusic.at(-1)
+            ?.offset ?? 0,
       ),
     )
     .toBeGreaterThan(1.8);
@@ -269,7 +275,9 @@ test("cross-origin Opus reaches Web Audio, seeks and releases on close", async (
   ).toBeNull();
 });
 
-test("music stays aligned when starting mid-beatmap, seeking and restarting", async ({ page }) => {
+test("buffered source offsets agree when starting mid-beatmap, seeking and restarting", async ({
+  page,
+}) => {
   await audioRoutes(page);
   await page.goto("/e2e/browser/preview.html");
   test.skip(
@@ -295,12 +303,18 @@ test("music stays aligned when starting mid-beatmap, seeking and restarting", as
     await expect
       .poll(() =>
         page.evaluate(() => {
-          const media = (window as unknown as { previewMedia: HTMLMediaElement }).previewMedia;
-          const slider = document.querySelector<HTMLInputElement>(
-            '[aria-label="Playback position"]',
-          )!;
-          if (!media || media.paused || media.seeking) return Infinity;
-          return Math.abs(Number(slider.value) - media.currentTime - 2.75);
+          const state = window as unknown as {
+            previewContext: AudioContext;
+            previewMusic: { time: number; offset: number }[];
+          };
+          const music = state.previewMusic.at(-1);
+          const transport = window.previewTransport;
+          if (!music || transport?.snapshot().state !== "playing") return Infinity;
+          const expected = Math.max(
+            0,
+            music.offset + state.previewContext.currentTime - music.time + 2.75,
+          );
+          return Math.abs(transport.position - expected);
         }),
       )
       .toBeLessThan(0.08);
@@ -470,7 +484,6 @@ test("follow scrolls linearly within columns and across their boundaries", async
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
 
   const samples = await field.evaluate(async (element) => {
-    const slider = document.querySelector<HTMLInputElement>('[aria-label="Playback position"]')!;
     const samples: { position: number; left: number; cursorVisible: boolean }[] = [];
     const started = performance.now();
     while (performance.now() - started < 1400) {
@@ -478,7 +491,7 @@ test("follow scrolls linearly within columns and across their boundaries", async
       const bounds = element.getBoundingClientRect();
       const cursor = element.querySelector('[data-slot="preview-cursor"]')!.getBoundingClientRect();
       samples.push({
-        position: Number(slider.value),
+        position: window.previewTransport!.presentationPosition,
         left: element.scrollLeft,
         cursorVisible: cursor.right > bounds.left && cursor.left < bounds.right,
       });

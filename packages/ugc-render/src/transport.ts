@@ -1,3 +1,9 @@
+import { audioReady } from "./audio-ready.js";
+import {
+  prepareBufferedMusic,
+  type BufferedMusic,
+  type MusicFallbackReason,
+} from "./buffered-music.js";
 import { HitQueue, type ChartTiming } from "./timing.js";
 
 /** Hit-sound grouping window in milliseconds. */
@@ -16,19 +22,31 @@ export type TransportOptions = {
   timing: ChartTiming;
   hits: number[];
   musicUrl?: string;
+  musicMode?: "streaming" | "auto";
   tapUrl: string;
   refreshMusic?: () => Promise<string | undefined>;
   onChange: (snapshot: TransportSnapshot) => void;
   onError: (error: unknown) => void;
 };
 
-/** Streaming BGM is authoritative; Web Audio supplies the silent phases and attacks. */
+export type TransportDiagnostics = Readonly<{
+  backend: "buffered" | "streaming" | "silent" | "preparing";
+  fallbackReason?: MusicFallbackReason;
+  baseLatency?: number;
+  outputLatency?: number;
+  sampleRate?: number;
+  decodedBytes: number;
+}>;
+
+/** Streaming stays compatible; automatic playback shares one clock for decoded music and hits. */
 export class ChartTransport {
   private readonly media = new Audio();
   private readonly queue: HitQueue;
   private context?: AudioContext;
   private musicGain?: GainNode;
   private hitGain?: GainNode;
+  private mediaSource?: MediaElementAudioSourceNode;
+  private mediaConnected = false;
   private tap?: AudioBuffer;
   private tapLoading?: Promise<void>;
   private readonly requests = new AbortController();
@@ -50,6 +68,11 @@ export class ChartTransport {
   private refreshed = false;
   private startingMedia = false;
   private unlocked = false;
+  private buffered?: BufferedMusic;
+  private musicLoading?: Promise<BufferedMusic>;
+  private preparing = false;
+  private musicSource?: AudioBufferSourceNode;
+  private lastPresentation = 0;
 
   private readonly options: TransportOptions;
   constructor(options: TransportOptions) {
@@ -75,13 +98,76 @@ export class ChartTransport {
 
   get position(): number {
     if (this.state !== "playing" || !this.context) return this.anchorPosition;
-    if (!this.musicUnavailable && !this.media.paused && !this.media.ended && !this.startingMedia) {
+    if (
+      !this.usesBuffer &&
+      !this.musicUnavailable &&
+      !this.media.paused &&
+      !this.media.ended &&
+      !this.startingMedia
+    ) {
       return Math.min(this.duration, this.options.timing.audioStart + this.media.currentTime);
     }
     return Math.min(
       this.duration,
-      this.anchorPosition + (this.context.currentTime - this.anchorTime) * this.rate,
+      this.anchorPosition + Math.max(0, this.context.currentTime - this.anchorTime) * this.rate,
     );
+  }
+
+  private get usesBuffer() {
+    return !this.musicUnavailable && this.rate === 1 && !!this.buffered?.buffer;
+  }
+
+  get diagnostics(): TransportDiagnostics {
+    const buffer = this.buffered?.buffer;
+    return {
+      backend: this.preparing
+        ? "preparing"
+        : this.musicUnavailable
+          ? "silent"
+          : this.usesBuffer
+            ? "buffered"
+            : "streaming",
+      fallbackReason:
+        this.options.musicMode === "auto" && this.rate !== 1
+          ? "rate"
+          : this.buffered?.fallbackReason,
+      baseLatency: this.context?.baseLatency,
+      outputLatency: this.context?.outputLatency,
+      sampleRate: this.context?.sampleRate,
+      decodedBytes: buffer ? buffer.length * buffer.numberOfChannels * 4 : 0,
+    };
+  }
+
+  get presentationPosition(): number {
+    if (this.state !== "playing" || !this.context) return this.anchorPosition;
+    const context = this.context;
+    let outputTime = context.currentTime;
+    const timestamp = context.getOutputTimestamp?.();
+    const now = performance.now();
+    if (
+      timestamp &&
+      Number.isFinite(timestamp.contextTime) &&
+      timestamp.contextTime! > 0 &&
+      Number.isFinite(timestamp.performanceTime) &&
+      timestamp.performanceTime! > 0 &&
+      now - timestamp.performanceTime! >= 0 &&
+      now - timestamp.performanceTime! < 1000
+    ) {
+      outputTime = timestamp.contextTime! + (now - timestamp.performanceTime!) / 1000;
+    } else {
+      const latency = [context.baseLatency, context.outputLatency].reduce(
+        (sum, value) => sum + (Number.isFinite(value) && value >= 0 ? value : 0),
+        0,
+      );
+      outputTime -= latency;
+    }
+    outputTime = Math.min(context.currentTime, outputTime);
+    const position =
+      this.usesBuffer || this.musicUnavailable || this.media.ended
+        ? this.anchorPosition + Math.max(0, outputTime - this.anchorTime) * this.rate
+        : this.position - Math.max(0, context.currentTime - outputTime) * this.rate;
+    this.lastPresentation = Math.max(this.lastPresentation, Math.min(this.duration, position));
+    return this.lastPresentation;
   }
 
   snapshot(): TransportSnapshot {
@@ -102,6 +188,7 @@ export class ChartTransport {
   private anchor(position: number) {
     this.anchorPosition = position;
     this.anchorTime = this.context?.currentTime ?? 0;
+    this.lastPresentation = position;
   }
 
   private cancelSounds() {
@@ -116,14 +203,18 @@ export class ChartTransport {
   private initialize() {
     if (this.context) return;
     this.context = new AudioContext();
+    this.context.addEventListener?.("statechange", this.onContextState);
     this.musicGain = this.context.createGain();
     this.hitGain = this.context.createGain();
     this.musicGain.gain.value = this.musicVolume;
     this.hitGain.gain.value = this.hitVolume;
-    this.context.createMediaElementSource(this.media).connect(this.musicGain);
+    this.mediaSource = this.context.createMediaElementSource(this.media);
+    this.connectMedia(true);
     this.musicGain.connect(this.context.destination);
     this.hitGain.connect(this.context.destination);
-    this.tapLoading = fetch(this.options.tapUrl, { signal: this.requests.signal })
+    this.tapLoading = fetch(this.options.tapUrl, {
+      signal: AbortSignal.any([this.requests.signal, AbortSignal.timeout(30_000)]),
+    })
       .then((response) => {
         if (!response.ok) throw new Error("Hit sound unavailable.");
         return response.arrayBuffer();
@@ -150,13 +241,49 @@ export class ChartTransport {
         this.anchor(0);
       }
       const resume = this.context!.resume();
-      if (this.unlocked) await resume;
-      else await this.unlock(resume, generation);
+      if (
+        this.options.musicMode === "auto" &&
+        this.rate === 1 &&
+        !this.musicUnavailable &&
+        !this.buffered
+      ) {
+        this.state = "buffering";
+        this.preparing = true;
+        this.startingMedia = true;
+        this.musicGain!.gain.value = 0;
+        // Prime the fallback from the gesture too; decoded playback does not depend on its success.
+        void this.media.play().catch(() => {});
+        this.emit();
+        this.musicLoading ??= prepareBufferedMusic(
+          this.media,
+          this.context!,
+          this.requests.signal,
+          this.renewMusic,
+        );
+        const [buffered] = await audioReady(
+          Promise.all([this.musicLoading, resume, this.tapLoading]),
+          this.requests.signal,
+        );
+        if (this.disposed || generation !== this.generation) return;
+        this.buffered = buffered;
+        this.preparing = false;
+        this.media.pause();
+        this.startingMedia = false;
+        this.musicGain!.gain.value = this.musicVolume;
+        this.unlocked = true;
+      } else if (this.unlocked) {
+        this.state = "buffering";
+        this.emit();
+        await audioReady(resume, this.requests.signal);
+      } else await this.unlock(resume, generation);
       if (this.disposed || generation !== this.generation) return;
       this.anchor(this.anchorPosition);
       this.queue.reset(this.anchorPosition);
       this.state = "playing";
-      if (
+      if (this.usesBuffer) {
+        this.anchorTime += 0.05;
+        this.startBuffer();
+      } else if (
         !this.musicUnavailable &&
         this.anchorPosition >= this.options.timing.audioStart &&
         this.anchorPosition < this.musicEnd()
@@ -175,6 +302,45 @@ export class ChartTransport {
     }
   }
 
+  private startBuffer() {
+    this.connectMedia(false);
+    const context = this.context!;
+    const start = this.options.timing.audioStart;
+    const offset = Math.max(0, this.anchorPosition - start);
+    const buffer = this.buffered!.buffer!;
+    if (offset >= buffer.duration || start >= this.duration) return;
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.musicGain!);
+    this.musicSource = source;
+    source.onended = () => {
+      source.disconnect();
+      if (this.musicSource === source) this.musicSource = undefined;
+    };
+    source.start(this.anchorTime + Math.max(0, start - this.anchorPosition), offset);
+    source.stop(this.anchorTime + this.duration - this.anchorPosition);
+  }
+
+  private connectMedia(connected: boolean) {
+    if (!this.mediaSource || this.mediaConnected === connected) return;
+    if (connected) this.mediaSource.connect(this.musicGain!);
+    else this.mediaSource.disconnect();
+    this.mediaConnected = connected;
+  }
+
+  private readonly onContextState = () => {
+    if (this.context?.state !== "running" && this.state !== "paused") this.pause();
+  };
+
+  private readonly renewMusic = async () => {
+    if (this.refreshed || !this.options.refreshMusic || this.disposed) return false;
+    this.refreshed = true;
+    const url = await this.options.refreshMusic();
+    if (!url || this.disposed) return false;
+    this.media.src = url;
+    return true;
+  };
+
   private async unlock(resume: Promise<void>, generation: number) {
     // Unlock from the gesture, but keep the beatmap stopped until the hit sound is decoded.
     this.state = "buffering";
@@ -182,7 +348,7 @@ export class ChartTransport {
     this.musicGain!.gain.value = 0;
     const priming = this.musicUnavailable ? Promise.resolve() : this.media.play();
     this.emit();
-    await Promise.all([resume, this.tapLoading, priming]);
+    await audioReady(Promise.all([resume, this.tapLoading, priming]), this.requests.signal);
     if (this.disposed || generation !== this.generation) return;
     this.media.pause();
     this.media.currentTime = Math.max(0, this.anchorPosition - this.options.timing.audioStart);
@@ -198,6 +364,7 @@ export class ChartTransport {
   }
 
   private startMusic(position: number, generation: number) {
+    this.connectMedia(true);
     this.cancelSounds();
     this.queue.reset(position);
     this.startingMedia = true;
@@ -235,7 +402,11 @@ export class ChartTransport {
     this.anchor(position);
     this.state = "paused";
     this.startingMedia = false;
+    this.preparing = false;
     this.media.pause();
+    this.musicSource?.stop();
+    this.musicSource?.disconnect();
+    this.musicSource = undefined;
     if (cancelHits) this.cancelSounds();
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
@@ -276,7 +447,13 @@ export class ChartTransport {
   }
 
   private readonly onWaiting = () => {
-    if (this.state === "paused" || this.startingMedia || this.musicUnavailable || this.media.paused)
+    if (
+      this.usesBuffer ||
+      this.state === "paused" ||
+      this.startingMedia ||
+      this.musicUnavailable ||
+      this.media.paused
+    )
       return;
     this.anchor(this.options.timing.audioStart + this.media.currentTime);
     this.state = "buffering";
@@ -287,6 +464,7 @@ export class ChartTransport {
 
   private readonly onPlaying = () => {
     if (
+      this.usesBuffer ||
       this.state === "paused" ||
       this.startingMedia ||
       this.musicUnavailable ||
@@ -302,14 +480,15 @@ export class ChartTransport {
   };
 
   private readonly onEnded = () => {
-    if (this.state === "paused") return;
+    if (this.state === "paused" || this.usesBuffer || this.preparing) return;
     this.anchor(this.options.timing.audioStart + this.media.duration);
     this.state = "playing";
     this.emit();
   };
 
   private readonly onMediaError = () => {
-    if (this.disposed || this.refreshing) return;
+    if (this.disposed || this.refreshing || this.preparing || this.usesBuffer) return;
+    if (this.options.musicMode === "auto" && !this.unlocked && !this.buffered) return;
     const wasPlaying = this.unlocked && this.state !== "paused";
     this.pause();
     const generation = this.generation;
@@ -347,6 +526,7 @@ export class ChartTransport {
     const ended = now >= this.duration;
     if (
       !ended &&
+      !this.usesBuffer &&
       !this.musicUnavailable &&
       !this.startingMedia &&
       this.media.paused &&
@@ -357,9 +537,11 @@ export class ChartTransport {
       return;
     }
     const audioTime = this.context.currentTime;
-    for (const time of this.queue.take(now, Math.min(this.duration, now + 0.1 * this.rate))) {
+    for (const time of this.queue.take(now, Math.min(this.duration, now + 0.25 * this.rate))) {
       if (!this.tap || !this.hitGain) continue;
-      const hitTime = audioTime + Math.max(0, (time - now) / this.rate);
+      const hitTime = this.usesBuffer
+        ? Math.max(audioTime, this.anchorTime + (time - this.anchorPosition) / this.rate)
+        : audioTime + Math.max(0, (time - now) / this.rate);
       // Collect each debounce window into one delayed sample, including across pump calls.
       // Tolerate floating-point rounding at the boundary of consecutive windows.
       if (hitTime < this.hitWindowEnd - 1e-9) continue;
@@ -376,7 +558,7 @@ export class ChartTransport {
       source.start(this.hitWindowEnd);
     }
     // Schedule the final step before stopping, and let its sample finish naturally.
-    if (ended) this.stop(false);
+    if (ended && (!this.usesBuffer || this.presentationPosition >= this.duration)) this.stop(false);
   };
 
   dispose() {
@@ -384,6 +566,10 @@ export class ChartTransport {
     this.pause();
     this.disposed = true;
     this.requests.abort();
+    this.buffered = undefined;
+    this.musicLoading = undefined;
+    this.tap = undefined;
+    this.context?.removeEventListener?.("statechange", this.onContextState);
     this.media.removeEventListener("loadedmetadata", this.emit);
     this.media.removeEventListener("waiting", this.onWaiting);
     this.media.removeEventListener("seeking", this.onWaiting);

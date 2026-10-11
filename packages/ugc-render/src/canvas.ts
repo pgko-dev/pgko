@@ -5,3 +5,4 @@ export {
   type ChartRenderOptions,
 } from "./renderer.js";
 export { theme, airColor, crushColor, innerWidthRatio } from "./theme.js";
+export { PortraitTiles } from "./portrait-tiles.js";

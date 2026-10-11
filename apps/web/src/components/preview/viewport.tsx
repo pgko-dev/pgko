@@ -9,6 +9,7 @@ export type PreviewViewportProps = Readonly<{
   zoom: number;
   expanded: boolean;
   tick: number;
+  readTick?: () => number;
   playing: boolean;
   onSeek: (tick: number) => void;
   label: string;

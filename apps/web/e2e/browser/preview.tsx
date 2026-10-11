@@ -13,8 +13,11 @@ import { Label } from "../../src/components/ui/label";
 import { fixture } from "../fixtures/beatmap";
 import toneUrl from "../fixtures/tone.opus?url";
 
+import { DiagnosticReport } from "./diagnostic-report";
 import { Harness } from "./harness";
 import "./observe-audio";
+import "./observe-render";
+import "./verify-tiles";
 
 const scenario = new URLSearchParams(location.search).get("fixture");
 const fixtureMusic = new URL(toneUrl, location.href);
@@ -169,6 +172,7 @@ function PreviewLab() {
         <Button variant="outline" onClick={() => setPauseSignal((value) => value + 1)}>
           Host pause
         </Button>
+        <DiagnosticReport />
         <span className="text-sm text-muted-foreground">
           Playback starts: <output aria-label="Playback starts">{starts}</output>
         </span>
