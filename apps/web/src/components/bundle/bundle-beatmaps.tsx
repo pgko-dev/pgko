@@ -26,7 +26,7 @@ export function BundleBeatmaps({
 }>) {
   const { t } = useTranslation();
   const { audioRef, playingId, setPlayingId, playPreview, stopPreview } = usePreviewAudio();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => songs[0]?.id ?? null);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);

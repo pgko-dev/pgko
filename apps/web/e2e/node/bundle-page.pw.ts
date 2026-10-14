@@ -6,7 +6,18 @@ import { bundleId, songs } from "../fixtures/bundle";
 
 import { wave } from "./audio";
 
-async function setup(page: Page, firstLoad?: Promise<void>) {
+async function setup(
+  page: Page,
+  {
+    firstLoad,
+    beforeOpen,
+    getRevision = () => 1,
+  }: {
+    firstLoad?: Promise<void>;
+    beforeOpen?: () => Promise<void>;
+    getRevision?: () => number;
+  } = {},
+) {
   let requests = 0;
   await page.route("**/api/auth/me", (route) => route.fulfill({ json: { user: null } }));
   await page.route("**/api/bundles/*/files", (route) => {
@@ -14,7 +25,7 @@ async function setup(page: Page, firstLoad?: Promise<void>) {
     return route.fulfill({
       json: {
         bundleId,
-        revision: 1,
+        revision: getRevision(),
         status: "ready",
         expiresAt: new Date(Date.now() + 3600_000).toISOString(),
         charts: songs.map((song) => ({
@@ -43,6 +54,7 @@ async function setup(page: Page, firstLoad?: Promise<void>) {
   await page.route(/\/(music|excerpt)\.wav$/, (route) =>
     route.fulfill({ contentType: "audio/wav", body: wave() }),
   );
+  await beforeOpen?.();
   await page.goto("/e2e/browser/bundle-page.html");
   await expect(page.getByRole("region", { name: "Beatmap browser", exact: true })).toBeVisible();
   return () => requests;
@@ -105,8 +117,12 @@ test("split page keeps controls visible while browsing, searching and switching 
   page,
 }, info) => {
   const requests = await setup(page);
-  expect(requests()).toBe(0);
+  await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Playback position" })).toHaveValue("0");
+  expect(requests()).toBe(1);
   await showList(page);
+  await expect(row(page, 1)).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("searchbox")).not.toHaveAttribute("placeholder");
   if (info.project.use.isMobile) {
     for (const action of [
@@ -121,9 +137,8 @@ test("split page keeps controls visible while browsing, searching and switching 
         .toBeGreaterThan(43.99);
     }
   }
-  await row(page, 1).click();
-  await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toBeVisible();
   const controls = page.locator('[data-slot="preview-controls"]');
+  if (info.project.use.isMobile) await page.keyboard.press("Escape");
   if (!info.project.use.isMobile) {
     const bounds = (await controls.boundingBox())!;
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(page.viewportSize()!.height);
@@ -209,17 +224,16 @@ test("collapse and picker preserve playback; beatmap changes reset it and coordi
   );
 });
 
-test("rapid selection ignores obsolete loading and a new revision clears selection", async ({
+test("rapid selection ignores obsolete loading and a new revision selects its first beatmap", async ({
   page,
 }, info) => {
   let finishFirstLoad = () => {};
   const firstLoad = new Promise<void>((resolve) => {
     finishFirstLoad = resolve;
   });
-  await setup(page, firstLoad);
+  let revision = 1;
+  await setup(page, { firstLoad, getRevision: () => revision });
   try {
-    await showList(page);
-    await row(page, 1).click();
     const preview = page.getByRole("region", { name: "Beatmap preview", exact: true });
     await expect(preview.getByRole("status")).toHaveText("Loading beatmap preview");
     await expect(preview.getByRole("heading")).toHaveCount(0);
@@ -232,13 +246,16 @@ test("rapid selection ignores obsolete loading and a new revision clears selecti
   }
   await expect(page.getByRole("heading", { name: "Beatmap 02 - Second artist" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toHaveCount(0);
+  revision = 2;
   await page.getByRole("button", { name: "Change revision", exact: true }).click();
-  await expect(page.locator("canvas")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Playback position" })).toHaveValue("0");
   await showList(page);
   await expect(page.getByRole("searchbox")).toHaveValue("");
   await expect(page.getByRole("button", { name: /^Preview beatmap:/, pressed: true })).toHaveCount(
-    0,
+    1,
   );
+  await expect(row(page, 1)).toHaveAttribute("aria-pressed", "true");
 });
 
 const stalledRequests = [
@@ -252,22 +269,23 @@ for (const { stage, url } of stalledRequests) {
   test(`stalled ${stage} shows a retryable timeout and ignores its late result`, async ({
     page,
   }, info) => {
-    await setup(page);
-    await page.clock.install();
     const intercepted = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
     let blocked = true;
-    await page.route(url, async (route) => {
-      if (blocked) {
-        intercepted.resolve();
-        await release.promise;
-      }
-      await route.fallback();
+    await setup(page, {
+      beforeOpen: async () => {
+        await page.clock.install();
+        await page.route(url, async (route) => {
+          if (blocked) {
+            intercepted.resolve();
+            await release.promise;
+          }
+          await route.fallback();
+        });
+      },
     });
 
     try {
-      await showList(page);
-      await row(page, 1).click();
       await intercepted.promise;
       await expect(page.getByText("Loading beatmap preview", { exact: true })).toBeVisible();
       await page.clock.fastForward(PREVIEW_LOAD_TIMEOUT_MS + 1);
