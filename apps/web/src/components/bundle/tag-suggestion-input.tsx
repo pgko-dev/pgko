@@ -35,7 +35,8 @@ export function TagSuggestionInput({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const suggestions = useBundleTagSuggestions(input);
   const { fetchNextPage, hasNextPage, isFetching, isFetchNextPageError, waiting } = suggestions;
-  const items = suggestions.items.filter((item) => !selected.includes(item));
+  const selectedTags = new Set(selected);
+  const items = suggestions.items.filter((item) => !selectedTags.has(item));
 
   useEffect(() => {
     const sentinel = sentinelRef.current;

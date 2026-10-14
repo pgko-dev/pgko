@@ -66,6 +66,7 @@ export function BundleFilterOptions({
 }>) {
   const { t } = useTranslation();
   const difficulties = value.diff ?? [];
+  const selectedDifficulties = new Set(difficulties);
   const tags = value.tag ?? [];
   const chips = difficulties.map((difficulty) => ({
     key: `difficulty-${difficulty}`,
@@ -104,19 +105,19 @@ export function BundleFilterOptions({
                   key={difficulty}
                   size="sm"
                   className="justify-between"
-                  variant={difficulties.includes(difficulty) ? "secondary" : "ghost"}
-                  aria-pressed={difficulties.includes(difficulty)}
+                  variant={selectedDifficulties.has(difficulty) ? "secondary" : "ghost"}
+                  aria-pressed={selectedDifficulties.has(difficulty)}
                   onClick={() =>
                     onChange({
                       ...value,
-                      diff: difficulties.includes(difficulty)
+                      diff: selectedDifficulties.has(difficulty)
                         ? difficulties.filter((item) => item !== difficulty)
                         : [...difficulties, difficulty],
                     })
                   }
                 >
                   {DIFFICULTY_NAMES[difficulty]}
-                  {difficulties.includes(difficulty) && <Check />}
+                  {selectedDifficulties.has(difficulty) && <Check />}
                 </Button>
               ))}
             </div>
