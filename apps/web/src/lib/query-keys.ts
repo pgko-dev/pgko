@@ -9,6 +9,7 @@ export const QUERY_KEYS = {
     { ...filters, account },
   ],
   bundleListAll: ["bundle-list"],
+  bundleTagSuggestions: (query: string) => ["bundle-tag-suggestions", query],
   userProfile: (jointID?: string) => (jointID ? ["user-profile", jointID] : []),
   userList: (filters: Omit<UserListQuery, "cursor">) => ["user-list", filters],
   serverConfig: ["server-config"],

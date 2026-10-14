@@ -331,6 +331,15 @@ export const ui = {
     browserTab: "谱师",
   },
   bundleList: {
+    filters: {
+      difficulty: "难度",
+      tags: "标签",
+      active: "已选筛选条件",
+      clear: "清除筛选",
+      remove: "移除筛选：{{value}}",
+      noSuggestions: "暂无匹配建议",
+      tagPlaceholder: "搜索标签…",
+    },
     visibilityBadge: {
       profileOnly: "主页",
       unlisted: "链接",

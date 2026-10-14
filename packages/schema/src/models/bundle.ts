@@ -371,6 +371,23 @@ export type BundleListResponse = v.InferOutput<typeof BundleListResponseSchema>;
 
 const MIN_SEARCH_LENGTH = 2;
 
+export const BundleFilterRules = {
+  difficulties: [0, 1, 2, 3, 5, 4],
+} as const;
+
+export const BundleTagSuggestionsQuerySchema = v.object({
+  q: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(32)), ""),
+  cursor: v.optional(v.pipe(v.string(), v.maxLength(1024))),
+  limit: v.optional(v.pipe(integerFrom(), v.minValue(1), v.maxValue(50)), 20),
+});
+export type BundleTagSuggestionsQuery = v.InferOutput<typeof BundleTagSuggestionsQuerySchema>;
+
+export const BundleTagSuggestionsResponseSchema = v.object({
+  items: v.array(v.string()),
+  nextCursor: v.nullable(v.string()),
+});
+export type BundleTagSuggestionsResponse = v.InferOutput<typeof BundleTagSuggestionsResponseSchema>;
+
 export const BundleListQuerySchema = v.object({
   q: v.optional(
     v.pipe(
@@ -382,6 +399,8 @@ export const BundleListQuerySchema = v.object({
     ),
   ),
   userId: v.optional(uuidString()),
+  diff: v.optional(v.array(v.picklist(BundleFilterRules.difficulties))),
+  tag: v.optional(BundleTagsSchema),
   sort: v.optional(v.picklist(["releasedAt", "reuploadedAt", "title", "artist", "downloads"])),
   order: v.optional(v.picklist(["asc", "desc"])),
   cursor: v.optional(v.string()),
@@ -390,6 +409,7 @@ export const BundleListQuerySchema = v.object({
   collaborationsOnly: v.optional(booleanFrom()),
   collaborationStatus: v.optional(CollaborationRequestStatusSchema),
 });
+
 export type BundleListQuery = v.InferOutput<typeof BundleListQuerySchema>;
 
 export const AdminSetBundleVisibilityBodySchema = v.object({

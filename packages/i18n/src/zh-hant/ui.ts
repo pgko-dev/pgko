@@ -331,6 +331,15 @@ export const ui = {
     browserTab: "譜師",
   },
   bundleList: {
+    filters: {
+      difficulty: "難度",
+      tags: "標籤",
+      active: "已選篩選條件",
+      clear: "清除篩選",
+      remove: "移除篩選：{{value}}",
+      noSuggestions: "沒有符合的建議",
+      tagPlaceholder: "搜尋標籤…",
+    },
     visibilityBadge: {
       profileOnly: "個人頁",
       unlisted: "連結",
