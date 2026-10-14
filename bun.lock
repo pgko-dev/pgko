@@ -210,7 +210,7 @@
     "@fontsource-variable/noto-sans": "^5.3.0",
     "@fontsource-variable/noto-sans-jp": "^5.3.0",
     "@fontsource-variable/noto-sans-kr": "^5.3.0",
-    "@fontsource-variable/noto-sans-sc": "^5.3.0",
+    "@fontsource-variable/noto-sans-sc": "^5.3.1",
     "@fontsource-variable/noto-sans-tc": "^5.3.0",
     "@mantine/hooks": "^9.6.3",
     "@mdx-js/rollup": "^3.1.1",
@@ -486,7 +486,7 @@
 
     "@fontsource-variable/noto-sans-kr": ["@fontsource-variable/noto-sans-kr@5.3.0", "", {}, "sha512-h863ZOIVMKjX0PSr0hLMUp/SjrwOul2yp0f5P61avqXdhqDABSkakzG2Ee07d3W8gVYgS9dMmxULdCkoN09f1A=="],
 
-    "@fontsource-variable/noto-sans-sc": ["@fontsource-variable/noto-sans-sc@5.3.0", "", {}, "sha512-lNar1dF7Ik/lHNPo/7JWG0TolXY29LtsqYgMvEysooZ5bsO9uH4shJmRrwyJ3PjyTPljhpMJEK0jDuLSU4vJ1w=="],
+    "@fontsource-variable/noto-sans-sc": ["@fontsource-variable/noto-sans-sc@5.3.1", "", {}, "sha512-UB96JJ17HyD5ehEU7Em0hDdh7fvTMB4B4Hzmq5c4QaNwwSLqTrdM2S+coySeBqCkXwh0DxqXT0b0wMrmzorFpQ=="],
 
     "@fontsource-variable/noto-sans-tc": ["@fontsource-variable/noto-sans-tc@5.3.0", "", {}, "sha512-sniyvTx+yRXlce9bjBV0i3kBG3/YFJiz6SZA9plNJLCR4TbY8il+G759gAXWHZu01eAclbJEN2YR+qbQjZTjkg=="],
 
