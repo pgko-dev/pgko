@@ -92,7 +92,7 @@
     "react-cookie": "^8.1.2",
     "react-dom": "^19.3.0",
     "react-fast-marquee": "^1.6.5",
-    "react-i18next": "^17.0.15",
+    "react-i18next": "^17.0.16",
     "react-image-crop": "^11.1.2",
     "recharts": "3.10.1",
     "rollup-plugin-visualizer": "^7.1.1",
