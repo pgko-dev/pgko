@@ -333,6 +333,15 @@ export const ui = {
     browserTab: "制作者",
   },
   bundleList: {
+    filters: {
+      difficulty: "難易度",
+      tags: "タグ",
+      active: "適用中のフィルター",
+      clear: "フィルターをクリア",
+      remove: "{{value}} フィルターを削除",
+      noSuggestions: "一致する候補はありません",
+      tagPlaceholder: "タグを検索…",
+    },
     visibilityBadge: {
       profileOnly: "プロフィール",
       unlisted: "リンク",

@@ -35,8 +35,10 @@ export const useBundleList = (
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: options?.enabled !== false,
     queryFn: async ({ pageParam, signal }) => {
-      const params: Record<string, string> = {};
+      const params: Record<string, string | string[] | number[]> = {};
       if (filters.q) params.q = filters.q;
+      if (filters.diff?.length) params.diff = filters.diff;
+      if (filters.tag?.length) params.tag = filters.tag;
       if (!account && filters.userId) params.userId = filters.userId;
       if (filters.sort) params.sort = filters.sort;
       if (filters.order) params.order = filters.order;
@@ -48,6 +50,7 @@ export const useBundleList = (
 
       const response = await apiClient.get(account ? "/api/bundles/manage" : "/api/bundles", {
         params,
+        paramsSerializer: { indexes: null },
         signal,
       });
       return v.parse(BundleListResponseSchema, response.data);

@@ -335,6 +335,15 @@ export const ui = {
     browserTab: "Creators",
   },
   bundleList: {
+    filters: {
+      difficulty: "Difficulty",
+      tags: "Tags",
+      active: "Active filters",
+      clear: "Clear",
+      remove: "Remove {{value}} filter",
+      noSuggestions: "No matching suggestions",
+      tagPlaceholder: "Search tags…",
+    },
     visibilityBadge: {
       profileOnly: "Profile",
       unlisted: "Link",

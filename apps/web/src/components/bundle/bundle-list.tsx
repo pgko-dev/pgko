@@ -24,6 +24,7 @@ import { consumeReturnScrollY } from "@/lib/bundle-return";
 
 import { BundleCard } from "./bundle-card";
 import { CARD_HEIGHT, CARD_HEIGHT_MOBILE } from "./bundle-card-constants";
+import type { BundleFilterValues } from "./bundle-filter-options";
 import { BundleListFilters } from "./bundle-list-filters";
 import { ScrollToTopButton } from "./scroll-to-top-button";
 
@@ -193,11 +194,14 @@ export const BundleList = memo(function BundleList({
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebouncedValue(search, DEBOUNCE_MS);
+  const [filterValues, setFilterValues] = useState<BundleFilterValues>({});
+  const [debouncedFilterValues] = useDebouncedValue(filterValues, DEBOUNCE_MS);
   const [sort, setSort] = useState<NonNullable<BundleListQuery["sort"]>>("reuploadedAt");
   const [order, setOrder] = useState<NonNullable<BundleListQuery["order"]>>("desc");
 
   const filters = useMemo<BundleListQuery>(
     () => ({
+      ...debouncedFilterValues,
       q: debouncedSearch || undefined,
       userId,
       sort,
@@ -206,7 +210,16 @@ export const BundleList = memo(function BundleList({
       collaborationsOnly: collaborationsOnly === true ? true : undefined,
       collaborationStatus,
     }),
-    [debouncedSearch, userId, sort, order, draftsOnly, collaborationsOnly, collaborationStatus],
+    [
+      debouncedSearch,
+      debouncedFilterValues,
+      userId,
+      sort,
+      order,
+      draftsOnly,
+      collaborationsOnly,
+      collaborationStatus,
+    ],
   );
 
   const { data, isLoading, isError, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
@@ -324,6 +337,8 @@ export const BundleList = memo(function BundleList({
       />
       {showFilters && (
         <BundleListFilters
+          filters={filterValues}
+          onFiltersChange={setFilterValues}
           search={search}
           onSearchChange={setSearch}
           sort={sort}

@@ -6,6 +6,9 @@ import {
   AdminSetBundleVisibilityBodySchema,
   AssetReferencesSchema,
   BundleListQuerySchema,
+  BundleTagSuggestionsQuerySchema,
+  PublicBundleListQuerySchema,
+  AccountBundleListQuerySchema,
   BundleUpdateMetadataBodySchema,
   BundleVisibilitySchema,
   CreateBundleUploadSessionBodySchema,
@@ -66,10 +69,67 @@ describe("AdminSetBundleVisibilityBodySchema", () => {
 });
 
 describe("BundleListQuerySchema", () => {
+  test("accepts typed difficulty and tag arrays", () => {
+    expect(
+      v.parse(BundleListQuerySchema, {
+        diff: [3, 5],
+        tag: ["remix", "original"],
+      }),
+    ).toEqual({
+      diff: [3, 5],
+      tag: ["remix", "original"],
+    });
+  });
+
+  test("validates filters on public and account endpoints", () => {
+    for (const schema of [
+      BundleListQuerySchema,
+      PublicBundleListQuerySchema,
+      AccountBundleListQuerySchema,
+    ]) {
+      for (const query of [
+        { diff: "3" },
+        { diff: "3,5" },
+        { diff: "" },
+        { diff: ["3"] },
+        { diff: [3, "5"] },
+        { diff: [6] },
+        { diff: [-1] },
+        { diff: [3.5] },
+        { tag: "remix" },
+        { tag: "remix,original" },
+        { tag: ["a"] },
+        { tag: ["invalid!"] },
+        { tag: [123] },
+      ]) {
+        expect(v.safeParse(schema, query).success).toBe(false);
+      }
+      expect(v.safeParse(schema, { diff: [0, 4, 5] }).success).toBe(true);
+      expect(v.parse(schema, { diff: [] }).diff).toEqual([]);
+      expect(v.parse(schema, { tag: ["remix"] }).tag).toEqual(["remix"]);
+      expect(v.parse(schema, { tag: [] }).tag).toEqual([]);
+    }
+  });
+
   test("coerces limit from a string", () => {
     expect(v.parse(BundleListQuerySchema, { limit: "30" }).limit).toBe(30);
     expect(() => v.parse(BundleListQuerySchema, { limit: "999" })).toThrow();
   });
+});
+
+test("tag suggestions validate bounded pages and trim search input", () => {
+  expect(v.parse(BundleTagSuggestionsQuerySchema, { q: " remix ", limit: "10" })).toEqual({
+    q: "remix",
+    limit: 10,
+  });
+  for (const query of [
+    { limit: 0 },
+    { limit: 51 },
+    { q: "x".repeat(33) },
+    { cursor: "a".repeat(1025) },
+  ]) {
+    expect(v.safeParse(BundleTagSuggestionsQuerySchema, query).success).toBe(false);
+  }
 });
 
 describe("CreateBundleUploadSessionBodySchema", () => {

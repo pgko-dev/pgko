@@ -334,6 +334,15 @@ export const ui = {
     browserTab: "제작자",
   },
   bundleList: {
+    filters: {
+      difficulty: "난이도",
+      tags: "태그",
+      active: "적용된 필터",
+      clear: "필터 초기화",
+      remove: "{{value}} 필터 제거",
+      noSuggestions: "일치하는 제안 없음",
+      tagPlaceholder: "태그 검색…",
+    },
     visibilityBadge: {
       profileOnly: "프로필",
       unlisted: "링크",
