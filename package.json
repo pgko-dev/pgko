@@ -69,7 +69,7 @@
     "@tanstack/react-router-devtools": "^1.167.2",
     "@tanstack/react-store": "^0.11.2",
     "@tanstack/react-virtual": "^3.14.13",
-    "@tanstack/router-plugin": "^1.168.42",
+    "@tanstack/router-plugin": "^1.168.43",
     "@types/bun": "^1.4.2",
     "@types/mdx": "^2.0.14",
     "@types/react": "^19.3.0",
