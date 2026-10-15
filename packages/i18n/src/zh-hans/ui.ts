@@ -369,6 +369,14 @@ export const ui = {
       downloads: "下载量",
       createdAt: "创建时间",
     },
+    sortDirection: {
+      releasedAt: { desc: "最新发布", asc: "最早发布" },
+      reuploadedAt: { desc: "最近更新", asc: "最早更新" },
+      title: { asc: "标题：升序", desc: "标题：降序" },
+      artist: { asc: "曲师：升序", desc: "曲师：降序" },
+      downloads: { desc: "下载最多", asc: "下载最少" },
+      createdAt: { desc: "最新创建的草稿", asc: "最早创建的草稿" },
+    },
     sortLabel: "排序方式",
   },
   toast: {

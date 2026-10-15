@@ -369,6 +369,14 @@ export const ui = {
       downloads: "下載數",
       createdAt: "建立時間",
     },
+    sortDirection: {
+      releasedAt: { desc: "最新發布", asc: "最早發布" },
+      reuploadedAt: { desc: "最近更新", asc: "最早更新" },
+      title: { asc: "標題：升冪", desc: "標題：降冪" },
+      artist: { asc: "演出者：升冪", desc: "演出者：降冪" },
+      downloads: { desc: "下載最多", asc: "下載最少" },
+      createdAt: { desc: "最新建立的草稿", asc: "最早建立的草稿" },
+    },
     sortLabel: "排序依據",
   },
   toast: {

@@ -1,5 +1,5 @@
 import { useDebouncedValue } from "@mantine/hooks";
-import { useElementScrollRestoration } from "@tanstack/react-router";
+import { useElementScrollRestoration, useLocation } from "@tanstack/react-router";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   type ReactNode,
@@ -17,14 +17,14 @@ import type { BundleListItem, BundleListQuery, BundleListSong } from "@pgko.dev/
 
 import { Spinner } from "@/components/ui/spinner";
 import { useBundleList } from "@/hooks/query/use-bundle-list";
+import { useBundleListSearch } from "@/hooks/use-bundle-list-search";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePreviewAudio } from "@/hooks/use-preview-audio";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
-import { consumeReturnScrollY } from "@/lib/bundle-return";
+import { clearBundleReturnScroll, getBundleReturnScrollY } from "@/lib/bundle-return";
 
 import { BundleCard } from "./bundle-card";
 import { CARD_HEIGHT, CARD_HEIGHT_MOBILE } from "./bundle-card-constants";
-import type { BundleFilterValues } from "./bundle-filter-options";
 import { BundleListFilters } from "./bundle-list-filters";
 import { ScrollToTopButton } from "./scroll-to-top-button";
 
@@ -118,6 +118,7 @@ const BundleListVirtualized = memo(function BundleListVirtualized({
   return (
     <>
       <div
+        className="isolate"
         style={{
           height: virtualizer.getTotalSize(),
           position: "relative",
@@ -192,12 +193,10 @@ export const BundleList = memo(function BundleList({
   extraFilters,
 }: Readonly<BundleListProps>) {
   const { t } = useTranslation();
-  const [search, setSearch] = useState("");
+  const { search, setSearch, filterValues, setFilterValues, sort, order, setSort } =
+    useBundleListSearch();
   const [debouncedSearch] = useDebouncedValue(search, DEBOUNCE_MS);
-  const [filterValues, setFilterValues] = useState<BundleFilterValues>({});
   const [debouncedFilterValues] = useDebouncedValue(filterValues, DEBOUNCE_MS);
-  const [sort, setSort] = useState<NonNullable<BundleListQuery["sort"]>>("reuploadedAt");
-  const [order, setOrder] = useState<NonNullable<BundleListQuery["order"]>>("desc");
 
   const filters = useMemo<BundleListQuery>(
     () => ({
@@ -282,7 +281,10 @@ export const BundleList = memo(function BundleList({
   }, [bundles, cols]);
 
   const scrollEntry = useElementScrollRestoration({ getElement: () => window });
-  const [initialOffset] = useState(() => consumeReturnScrollY() ?? scrollEntry?.scrollY);
+  const href = useLocation({ select: (location) => location.href });
+  const [initialOffset] = useState(() => getBundleReturnScrollY(href) ?? scrollEntry?.scrollY);
+
+  useEffect(() => clearBundleReturnScroll(), []);
 
   const { visible: showScrollToTop, scrollToTop } = useScrollToTop();
 
@@ -344,7 +346,6 @@ export const BundleList = memo(function BundleList({
           sort={sort}
           onSortChange={setSort}
           order={order}
-          onOrderChange={setOrder}
           searchPlaceholder={searchPlaceholder}
           extraFilters={extraFilters}
           draftsOnly={draftsOnly}

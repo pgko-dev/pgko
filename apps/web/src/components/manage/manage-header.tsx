@@ -27,7 +27,7 @@ export function ManageHeader() {
     const returnTo = getBundleReturnTo();
     if (returnTo) {
       clearBundleReturnTo();
-      return router.navigate({ to: returnTo, resetScroll: false });
+      return router.navigate({ href: returnTo, resetScroll: false });
     }
 
     return router.navigate({ to: "/" });

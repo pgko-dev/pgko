@@ -371,6 +371,14 @@ export const ui = {
       downloads: "ダウンロード数",
       createdAt: "作成日",
     },
+    sortDirection: {
+      releasedAt: { desc: "公開が新しい順", asc: "公開が古い順" },
+      reuploadedAt: { desc: "更新が新しい順", asc: "更新が古い順" },
+      title: { asc: "タイトル：昇順", desc: "タイトル：降順" },
+      artist: { asc: "アーティスト：昇順", desc: "アーティスト：降順" },
+      downloads: { desc: "ダウンロード数が多い順", asc: "ダウンロード数が少ない順" },
+      createdAt: { desc: "作成が新しい下書き順", asc: "作成が古い下書き順" },
+    },
     sortLabel: "並び替え",
   },
   toast: {

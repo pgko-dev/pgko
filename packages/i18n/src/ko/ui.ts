@@ -372,6 +372,14 @@ export const ui = {
       downloads: "다운로드 수",
       createdAt: "생성일",
     },
+    sortDirection: {
+      releasedAt: { desc: "최근 공개순", asc: "오래된 공개순" },
+      reuploadedAt: { desc: "최근 업데이트순", asc: "오래된 업데이트순" },
+      title: { asc: "제목 오름차순", desc: "제목 내림차순" },
+      artist: { asc: "아티스트 오름차순", desc: "아티스트 내림차순" },
+      downloads: { desc: "다운로드 많은 순", asc: "다운로드 적은 순" },
+      createdAt: { desc: "최근 생성한 초안순", asc: "오래된 초안순" },
+    },
     sortLabel: "정렬",
   },
   toast: {

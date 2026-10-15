@@ -793,8 +793,8 @@ export const BundleCard = memo(
     const isOwner = user?.id === bundle.uploadedBy.id;
     const isMobile = useIsMobile();
     const setReturnToBeforeBundleNav = useCallback(() => {
-      setBundleReturnTo(location.pathname);
-    }, [location.pathname]);
+      setBundleReturnTo(location.href);
+    }, [location.href]);
     const displayDate = useMemo(() => {
       if (dateSort === "reuploadedAt") {
         const dateStr = bundle.reuploadedAt ?? bundle.releasedAt;

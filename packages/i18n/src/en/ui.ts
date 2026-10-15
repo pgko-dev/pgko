@@ -373,6 +373,14 @@ export const ui = {
       downloads: "Downloads",
       createdAt: "Date created",
     },
+    sortDirection: {
+      releasedAt: { desc: "Newest releases", asc: "Oldest releases" },
+      reuploadedAt: { desc: "Recently updated", asc: "Least recently updated" },
+      title: { asc: "Title: A–Z", desc: "Title: Z–A" },
+      artist: { asc: "Artist: A–Z", desc: "Artist: Z–A" },
+      downloads: { desc: "Most downloaded", asc: "Least downloaded" },
+      createdAt: { desc: "Newest drafts", asc: "Oldest drafts" },
+    },
     sortLabel: "Sort by",
   },
   toast: {
