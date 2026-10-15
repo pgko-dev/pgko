@@ -25,7 +25,7 @@ export function useDeleteBundle(bundleId: string) {
       const returnTo = getBundleReturnTo();
       clearBundleReturnTo();
       if (returnTo) {
-        await router.navigate({ to: returnTo, resetScroll: false });
+        await router.navigate({ href: returnTo, resetScroll: false });
       } else {
         await router.navigate({ to: "/users/$jointId", params: { jointId: "me" } });
       }

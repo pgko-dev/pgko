@@ -91,7 +91,7 @@ export function BundleUploadBox() {
         });
         if (!routeMountedRef.current) return;
         onSuccess(file);
-        setBundleReturnTo(location.pathname);
+        setBundleReturnTo(location.href);
         allowNavigationRef.current = true;
         await navigate({ to: "/bundles/$bundleId/draft", params: { bundleId: data.id } });
       } catch (err) {
@@ -101,7 +101,7 @@ export function BundleUploadBox() {
         if (routeMountedRef.current) setUploadPhase(null);
       }
     },
-    [mutateAsync, location.pathname, navigate],
+    [mutateAsync, location.href, navigate],
   );
 
   return (

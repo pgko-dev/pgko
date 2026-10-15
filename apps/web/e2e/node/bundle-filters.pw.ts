@@ -1,5 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { bundle, songs } from "../fixtures/bundle";
+
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/auth/me", (route) => route.fulfill({ json: { user: null } }));
+});
+
 async function mockSuggestions(page: Page) {
   const queries: URLSearchParams[] = [];
   await page.route("**/api/bundles/tag-suggestions*", async (route) => {
@@ -207,4 +213,200 @@ test("sorter and filters share space then wrap as independent groups", async ({
     expect(bounds!.width).toBeLessThanOrEqual(288);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+async function mockBundleList(page: Page) {
+  const requests: URL[] = [];
+  await page.route(/\/api\/bundles(?:\/manage)?(?:\?|$)/, async (route) => {
+    requests.push(new URL(route.request().url()));
+    await route.fulfill({
+      json: {
+        bundles: Array.from({ length: 120 }, (_, index) => ({
+          ...bundle,
+          id: `collection-${index}`,
+          title: `Collection ${index}`,
+          status: "released",
+          songs: [songs[0]],
+        })),
+        nextCursor: null,
+      },
+    });
+  });
+  return requests;
+}
+
+test("keeps the direction button and compact field labels while describing the selected order", async ({
+  page,
+}) => {
+  const requests = await mockBundleList(page);
+  await page.goto("/e2e/browser/bundle-filters.html");
+  const direction = page.getByRole("button", { name: "Toggle sort order", exact: true });
+  const sorter = page.getByRole("combobox", { name: "Sort by", exact: true });
+  await expect(sorter.locator('[data-slot="select-value"]')).toHaveText("Last updated");
+  await expect(direction).toHaveAttribute("title", "Recently updated");
+  await direction.click();
+  await expect(direction).toHaveAttribute("title", "Least recently updated");
+  await expect.poll(() => requests.at(-1)?.searchParams.get("order")).toBe("asc");
+
+  await sorter.click();
+  await expect(page.getByRole("option")).toHaveCount(5);
+  await page.getByRole("option", { name: "Downloads", exact: true }).click();
+  await expect(sorter.locator('[data-slot="select-value"]')).toHaveText("Downloads");
+  await expect(direction).toHaveAccessibleDescription("Least downloaded");
+  await direction.click();
+  await expect(direction).toHaveAttribute("title", "Most downloaded");
+  await expect.poll(() => requests.at(-1)?.searchParams.get("sort")).toBe("downloads");
+  await expect.poll(() => requests.at(-1)?.searchParams.get("order")).toBe("desc");
+});
+
+test("URL state survives refresh and clears without adding typing history", async ({ page }) => {
+  const requests = await mockBundleList(page);
+  const params = new URLSearchParams({
+    q: "123",
+    sort: "title",
+    order: "asc",
+    diff: JSON.stringify([3, 5]),
+    tag: JSON.stringify(["remix"]),
+  });
+  await page.goto(`/e2e/browser/bundle-filters.html?${params}`);
+  const search = page.getByRole("textbox", { name: "Search…" });
+  await expect(search).toHaveValue("123");
+  await expect(page.locator('[data-slot="select-value"]')).toHaveText("Title");
+  await expect(
+    page.getByRole("button", { name: "Remove MASTER filter", exact: true }),
+  ).toBeVisible();
+  await expect.poll(() => requests.at(-1)?.searchParams.getAll("diff")).toEqual(["3", "5"]);
+  await expect.poll(() => requests.at(-1)?.searchParams.getAll("tag")).toEqual(["remix"]);
+  const historyLength = await page.evaluate(() => history.length);
+
+  await search.fill("new search");
+  await page.getByRole("button", { name: "Toggle sort order", exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("q")).toBe("new search");
+  await expect.poll(() => new URL(page.url()).searchParams.get("order")).toBe("desc");
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+  const sharedUrl = page.url();
+  await page.reload();
+  await expect(search).toHaveValue("new search");
+  await expect(
+    page.getByRole("button", { name: "Toggle sort order", exact: true }),
+  ).toHaveAttribute("title", "Title: Z–A");
+  await expect(
+    page.getByRole("button", { name: "Remove remix filter", exact: true }),
+  ).toBeVisible();
+  expect(page.url()).toBe(sharedUrl);
+
+  await page.getByRole("button", { name: "Clear search", exact: true }).click();
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.has("q")).toBe(false);
+  await expect.poll(() => new URL(page.url()).searchParams.has("diff")).toBe(false);
+  await expect.poll(() => new URL(page.url()).searchParams.has("tag")).toBe(false);
+  await page.reload();
+  await expect(search).toHaveValue("");
+  await expect(page.getByRole("button", { name: /^Remove .* filter$/ })).toHaveCount(0);
+});
+
+for (const returnMethod of ["page", "browser"] as const) {
+  test(`${returnMethod} back restores the filtered URL and virtualized scroll position`, async ({
+    page,
+  }, testInfo) => {
+    await mockBundleList(page);
+    await page.goto("/e2e/browser/bundle-filters.html?q=collection&sort=downloads&order=asc");
+    await expect(page.getByRole("heading", { name: "Collection 0", exact: true })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 1600));
+    const card = page.getByRole("link", {
+      name: testInfo.project.use.isMobile ? "Collection 8" : "Collection 18",
+      exact: true,
+    });
+    await expect(card).toBeInViewport();
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBeGreaterThan(500);
+    const listUrl = page.url();
+    await card.click();
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toBeVisible();
+
+    if (returnMethod === "page") {
+      await page.getByRole("button", { name: "Back", exact: true }).click();
+    } else {
+      await page.goBack();
+    }
+
+    await expect(page).toHaveURL(listUrl);
+    await expect(page.getByRole("textbox", { name: "Search…" })).toHaveValue("collection");
+    await expect(page.locator('[data-slot="select-value"]')).toHaveText("Downloads");
+    await expect
+      .poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - scrollY))
+      .toBeLessThan(3);
+  });
+}
+
+test("card scrollbar keeps dragging outside the popover and releases normally", async ({
+  page,
+}, info) => {
+  test.skip(Boolean(info.project.use.isMobile), "Popover dragging needs a mouse pointer.");
+  await page.route(/\/api\/bundles(?:\?|$)/, (route) =>
+    route.fulfill({ json: { bundles: [{ ...bundle, songs }], nextCursor: null } }),
+  );
+  await page.goto("/e2e/browser/bundle-filters.html");
+  const card = page.getByRole("group").filter({
+    has: page.getByRole("link", { name: bundle.title!, exact: true }),
+  });
+  await expect(card).toBeVisible();
+  const bounds = (await card.boundingBox())!;
+  const trigger = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height - 8 };
+  await page.mouse.move(trigger.x, trigger.y);
+
+  const viewport = card.locator('[data-slot="scroll-area-viewport"]');
+  const thumb = card.locator('[data-slot="scroll-area-thumb"]');
+  await expect(thumb).toBeVisible();
+  await expect(card.locator("[inert]")).toHaveCount(0);
+  // Wait for the opening animation to expose the thumb to pointer hit testing.
+  await thumb.hover();
+  const trackBounds = (await card.locator('[data-slot="scroll-area"]').boundingBox())!;
+  const thumbBounds = (await thumb.boundingBox())!;
+  expect(trackBounds.x + trackBounds.width - thumbBounds.x - thumbBounds.width).toBeCloseTo(2);
+  const start = {
+    x: thumbBounds.x + thumbBounds.width / 2,
+    y: thumbBounds.y + thumbBounds.height / 2,
+  };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  try {
+    await page.mouse.move(trigger.x, start.y + 15, { steps: 5 });
+    await expect.poll(() => viewport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    const insideScroll = await viewport.evaluate((element) => element.scrollTop);
+    const outsideX = bounds.x + bounds.width + 24;
+    await page.mouse.move(outsideX, start.y + 50, { steps: 8 });
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(insideScroll);
+    await expect(card.locator("[inert]")).toHaveCount(0);
+    const outsideScroll = await viewport.evaluate((element) => element.scrollTop);
+    await page.mouse.move(outsideX, start.y + 30, { steps: 5 });
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeLessThan(outsideScroll);
+  } finally {
+    await page.mouse.up();
+  }
+  const finalScroll = await viewport.evaluate((element) => element.scrollTop);
+  await expect(card.locator("[inert]")).toHaveCount(1);
+  await page.mouse.move(trigger.x, trigger.y);
+  await expect(card.locator("[inert]")).toHaveCount(0);
+  expect(await viewport.evaluate((element) => element.scrollTop)).toBeCloseTo(finalScroll);
+});
+
+test("draft links retain their scope and describe creation order", async ({ page }) => {
+  const requests = await mockBundleList(page);
+  await page.goto("/e2e/browser/bundle-filters.html?mode=draft&q=draft&order=asc");
+  const direction = page.getByRole("button", { name: "Toggle sort order", exact: true });
+  await expect(page.getByRole("combobox", { name: "Sort by" })).toBeDisabled();
+  await expect(page.locator('[data-slot="select-value"]')).toHaveText("Date created");
+  await expect(direction).toHaveAttribute("title", "Oldest drafts");
+  await direction.click();
+  await expect(direction).toHaveAttribute("title", "Newest drafts");
+  await expect.poll(() => requests.at(-1)?.pathname).toBe("/api/bundles/manage");
+  await expect.poll(() => requests.at(-1)?.searchParams.get("draftsOnly")).toBe("true");
+  expect(new URL(page.url()).searchParams.get("mode")).toBe("draft");
+  await page.reload();
+  await expect(direction).toHaveAttribute("title", "Newest drafts");
 });

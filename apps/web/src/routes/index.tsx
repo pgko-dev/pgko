@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 
 import { BundleList } from "@/components/bundle";
 import { Site } from "@/components/site";
+import { validateBundleListSearch } from "@/lib/bundle-list-search";
 
 export const Route = createFileRoute("/")({
+  validateSearch: validateBundleListSearch,
   component: App,
 });
 

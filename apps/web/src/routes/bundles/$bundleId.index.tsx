@@ -6,8 +6,10 @@ import { sortSongs } from "@pgko.dev/common";
 
 import { BundleDetailContent, BundleDetailSkeleton } from "@/components/bundle";
 import { bundlePublicQueryOptions, useBundlePublic } from "@/hooks/query/use-bundle-public";
+import { validateBundleBeatmapSearch } from "@/lib/bundle-beatmap-search";
 
 export const Route = createFileRoute("/bundles/$bundleId/")({
+  validateSearch: validateBundleBeatmapSearch,
   beforeLoad: async ({ params: { bundleId }, context }) => {
     try {
       await context.queryClient.query({

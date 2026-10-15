@@ -1,9 +1,4 @@
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRouter,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -12,6 +7,7 @@ import { Site } from "../../src/components/site";
 import { Button } from "../../src/components/ui/button";
 import { AuthProvider } from "../../src/hooks/auth";
 import { ThemeProvider } from "../../src/integrations/theme-provider";
+import { validateBundleBeatmapSearch } from "../../src/lib/bundle-beatmap-search";
 import { bundle, bundleId, songs } from "../fixtures/bundle";
 
 import "./harness";
@@ -38,8 +34,14 @@ function Fixture() {
   );
 }
 
+const rootRoute = createRootRoute();
+const detailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/e2e/browser/bundle-page.html",
+  component: Fixture,
+  validateSearch: validateBundleBeatmapSearch,
+});
 const router = createRouter({
-  routeTree: createRootRoute({ component: Fixture }),
-  history: createMemoryHistory({ initialEntries: ["/"] }),
+  routeTree: rootRoute.addChildren([detailRoute]),
 });
 createRoot(document.getElementById("root")!).render(<RouterProvider router={router} />);

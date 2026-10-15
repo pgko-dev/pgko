@@ -9,4 +9,5 @@
 ## Documentation
 
 - READMEs cover overview, prerequisites, quick start, common commands, and links. Update them only for these changes; keep tool and dependency versions in repository configuration.
-- Keep architecture, implementation, workflow, and deployment details in `docs/`. Update feature docs with code changes; link from READMEs.
+- Update docs only when requested or when a change makes directly relevant guidance inaccurate or materially incomplete. A code change alone does not require a documentation update.
+- Keep architecture, implementation, workflow, and deployment guidance in `docs/`. Use the document that owns the topic; do not add task summaries or unrelated feature details to general guides such as `development.md`.

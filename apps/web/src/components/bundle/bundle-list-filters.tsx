@@ -2,8 +2,6 @@ import { ArrowDownWideNarrow, ArrowUpWideNarrow, Search, X } from "lucide-react"
 import { type ReactNode, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BundleListQuery } from "@pgko.dev/schema";
-
 import { AsyncRefreshIndicator } from "@/components/async-refresh-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,28 +14,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  BUNDLE_SORT_FIELDS,
+  type BundleSortField,
+  type BundleSortOrder,
+} from "@/lib/bundle-list-search";
 
 import { BundleFilterOptions, type BundleFilterValues } from "./bundle-filter-options";
-
-type SortField = NonNullable<BundleListQuery["sort"]>;
-type SortOrder = NonNullable<BundleListQuery["order"]>;
 
 interface BundleListFiltersProps {
   filters: BundleFilterValues;
   onFiltersChange: (value: BundleFilterValues) => void;
   search: string;
   onSearchChange: (value: string) => void;
-  sort: SortField;
-  onSortChange: (value: SortField) => void;
-  order: SortOrder;
-  onOrderChange: (value: SortOrder) => void;
+  sort: BundleSortField;
+  onSortChange: (sort: BundleSortField, order: BundleSortOrder) => void;
+  order: BundleSortOrder;
   searchPlaceholder?: string;
   extraFilters?: ReactNode;
   draftsOnly?: boolean;
   isRefreshing?: boolean;
 }
-
-const SORT_OPTIONS: SortField[] = ["reuploadedAt", "releasedAt", "title", "artist", "downloads"];
 
 export function BundleListFilters({
   filters,
@@ -47,7 +44,6 @@ export function BundleListFilters({
   sort,
   onSortChange,
   order,
-  onOrderChange,
   searchPlaceholder,
   extraFilters,
   draftsOnly,
@@ -57,9 +53,12 @@ export function BundleListFilters({
   const placeholder = searchPlaceholder ?? t("ui.bundleList.searchPlaceholder");
 
   const handleClearSearch = useCallback(() => onSearchChange(""), [onSearchChange]);
+  const sortDescription = t(
+    `ui.bundleList.sortDirection.${draftsOnly ? "createdAt" : sort}.${order}`,
+  );
   const handleToggleOrder = useCallback(
-    () => onOrderChange(order === "desc" ? "asc" : "desc"),
-    [onOrderChange, order],
+    () => onSortChange(sort, order === "desc" ? "asc" : "desc"),
+    [onSortChange, sort, order],
   );
 
   return (
@@ -107,6 +106,8 @@ export function BundleListFilters({
               size="icon-sm"
               onClick={handleToggleOrder}
               aria-label={t("ui.bundleList.toggleOrder")}
+              aria-description={sortDescription}
+              title={sortDescription}
             >
               {order === "desc" ? (
                 <ArrowDownWideNarrow className="size-3.5" />
@@ -115,32 +116,34 @@ export function BundleListFilters({
               )}
             </Button>
 
-            {draftsOnly ? (
-              <Select value="createdAt" disabled>
-                <SelectTrigger size="sm" className="w-38">
-                  <SelectValue>{t("ui.bundleList.sort.createdAt")}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">{t("ui.bundleList.sort.createdAt")}</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <Select value={sort} onValueChange={(v) => onSortChange(v as SortField)}>
-                <SelectTrigger size="sm" className="w-38">
-                  <SelectValue>{t(`ui.bundleList.sort.${sort}`)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>{t("ui.bundleList.sortLabel")}</SelectLabel>
-                    {SORT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {t(`ui.bundleList.sort.${opt}`)}
+            <Select
+              value={draftsOnly ? "createdAt" : sort}
+              disabled={draftsOnly}
+              onValueChange={(value) => {
+                const field = BUNDLE_SORT_FIELDS.find((option) => option === value);
+                if (field) onSortChange(field, order);
+              }}
+            >
+              <SelectTrigger size="sm" className="w-38" aria-label={t("ui.bundleList.sortLabel")}>
+                <SelectValue>
+                  {t(`ui.bundleList.sort.${draftsOnly ? "createdAt" : sort}`)}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>{t("ui.bundleList.sortLabel")}</SelectLabel>
+                  {draftsOnly ? (
+                    <SelectItem value="createdAt">{t("ui.bundleList.sort.createdAt")}</SelectItem>
+                  ) : (
+                    BUNDLE_SORT_FIELDS.map((field) => (
+                      <SelectItem key={field} value={field}>
+                        {t(`ui.bundleList.sort.${field}`)}
                       </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            )}
+                    ))
+                  )}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </>
         }
       />

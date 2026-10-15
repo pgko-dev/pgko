@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { CheckCircle, FileEdit, Settings, Users } from "lucide-react";
-import { useCallback, useState, type ComponentType } from "react";
+import { useCallback, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { PublicUser } from "@pgko.dev/schema";
@@ -14,15 +14,17 @@ import { ProfileSkeleton } from "@/components/user-profile/profile-skeleton";
 import { UserProfile } from "@/components/user-profile/user-profile";
 import { useAuth } from "@/hooks/auth";
 import { userProfileQueryOptions, useUserProfile } from "@/hooks/query/use-user-profile";
+import { validateProfileBundleSearch } from "@/lib/bundle-list-search";
 import { ensureAuthenticated } from "@/lib/ensure-auth";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/users/$jointId")({
-  beforeLoad: async ({ params, context, location }) => {
+  validateSearch: validateProfileBundleSearch,
+  beforeLoad: async ({ params, context, location, search }) => {
     if (params.jointId === "me") {
       const user = await ensureAuthenticated(context, location);
       const jointId = user.slug ?? user.id;
-      throw redirect({ to: "/users/$jointId", params: { jointId } });
+      throw redirect({ to: "/users/$jointId", params: { jointId }, search });
     }
 
     context.queryClient.query(userProfileQueryOptions(params.jointId)).catch(() => undefined);
@@ -78,11 +80,12 @@ function getProfilePageStatus({
 function RouteComponent() {
   const { jointId } = Route.useParams();
   const { user, isLoading: authLoading } = useAuth();
-  const [ownListMode, setOwnListMode] = useState<ListMode>("released");
+  const { mode = "released" } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const { t } = useTranslation();
 
   const isOwnProfile = jointId === user?.slug || jointId === user?.id;
-  const listMode = isOwnProfile ? ownListMode : "released";
+  const listMode = isOwnProfile ? mode : "released";
 
   const effectiveId = isOwnProfile ? (user?.slug ?? user?.id ?? "") : jointId;
   const { data: profileData, isLoading: profileLoading, isError } = useUserProfile(effectiveId);
@@ -98,10 +101,19 @@ function RouteComponent() {
     isError,
   });
 
-  const handleListModeChange = useCallback((v: string[]) => {
-    const next = v[0];
-    if (next) setOwnListMode(next as ListMode);
-  }, []);
+  const handleListModeChange = useCallback(
+    (values: string[]) => {
+      const next = LIST_MODE_OPTIONS_OWN.find((option) => option === values[0]);
+      if (!next) return;
+
+      void navigate({
+        search: (previous) => ({ ...previous, mode: next === "released" ? undefined : next }),
+        replace: true,
+        resetScroll: false,
+      });
+    },
+    [navigate],
+  );
 
   if (profileStatus === "not-found") {
     return <ProfileNotFound />;

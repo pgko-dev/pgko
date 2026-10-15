@@ -14,9 +14,11 @@ import { useAcceptCollaborationRequest } from "@/hooks/mutation/use-accept-colla
 import { useDeclineCollaborationRequest } from "@/hooks/mutation/use-decline-collaboration-request";
 import { useDismissCollaborationRequest } from "@/hooks/mutation/use-dismiss-collaboration-request";
 import { useLeaveCollaboration } from "@/hooks/mutation/use-leave-collaboration";
+import { validateCollaborationBundleSearch } from "@/lib/bundle-list-search";
 import { ensureAuthenticated } from "@/lib/ensure-auth";
 
 export const Route = createFileRoute("/collaborations")({
+  validateSearch: validateCollaborationBundleSearch,
   beforeLoad: async ({ context, location }) => {
     await ensureAuthenticated(context, location);
   },
@@ -37,7 +39,8 @@ const STATUS_ICONS: Record<
 function RouteComponent() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [status, setStatus] = useState<CollaborationRequestStatus>("pending");
+  const { status = "pending" } = Route.useSearch();
+  const navigate = Route.useNavigate();
 
   const { mutate: accept, isPending: isAccepting } = useAcceptCollaborationRequest();
   const { mutateAsync: decline, isPending: isDeclining } = useDeclineCollaborationRequest();
@@ -61,10 +64,19 @@ function RouteComponent() {
     setDeclineDialogBundleId(null);
   };
 
-  const handleStatusChange = useCallback((v: string[]) => {
-    const next = v[0];
-    if (next) setStatus(next as CollaborationRequestStatus);
-  }, []);
+  const handleStatusChange = useCallback(
+    (values: string[]) => {
+      const next = STATUS_OPTIONS.find((option) => option === values[0]);
+      if (!next) return;
+
+      void navigate({
+        search: (previous) => ({ ...previous, status: next === "pending" ? undefined : next }),
+        replace: true,
+        resetScroll: false,
+      });
+    },
+    [navigate],
+  );
 
   const renderExtraActions = useCallback(
     (bundle: BundleListItem, isMobile: boolean) => {
