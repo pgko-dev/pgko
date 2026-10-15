@@ -78,6 +78,7 @@ async function benchmarkStages(workload: Workload, Painter: PainterConstructor) 
   for (let iteration = 0; iteration < 10; iteration++) {
     const buffer = bytes.slice().buffer;
     const start = performance.now();
+    // react-doctor-disable-next-line react-doctor/async-await-in-loop -- Sequential samples isolate worker startup and execution time without CPU contention.
     const result = await prepareInWorker(buffer, {
       createWorker: () => new Worker("/worker.js", { type: "module" }),
       signal: new AbortController().signal,

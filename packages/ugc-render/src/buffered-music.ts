@@ -64,6 +64,22 @@ async function download(url: string, signal: AbortSignal): Promise<ArrayBuffer |
   return bytes.buffer;
 }
 
+async function downloadMusic(
+  media: HTMLAudioElement,
+  sampleRate: number,
+  signal: AbortSignal,
+): Promise<ArrayBuffer | "duration" | "size"> {
+  await metadata(media, signal);
+  const duration = media.duration;
+  if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_SECONDS) {
+    return "duration";
+  }
+  if (duration * sampleRate * 2 * 4 > MAX_DECODED_BYTES) {
+    return "size";
+  }
+  return (await download(media.src, signal)) ?? "size";
+}
+
 /** Limit retained PCM and downloads; native decoding can allocate additional temporary memory. */
 export async function prepareBufferedMusic(
   media: HTMLAudioElement,
@@ -87,25 +103,15 @@ export async function prepareBufferedMusic(
 
   const load = async (): Promise<BufferedMusic> => {
     controller.signal.throwIfAborted();
-    let bytes: ArrayBuffer | undefined;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        await metadata(media, controller.signal);
-        const duration = media.duration;
-        if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_SECONDS) {
-          return { fallbackReason: "duration" };
-        }
-        if (duration * context.sampleRate * 2 * 4 > MAX_DECODED_BYTES) {
-          return { fallbackReason: "size" };
-        }
-        bytes = await download(media.src, controller.signal);
-        break;
-      } catch (error) {
-        controller.signal.throwIfAborted();
-        if (attempt || !(await renew())) throw error;
-      }
+    let bytes: Awaited<ReturnType<typeof downloadMusic>>;
+    try {
+      bytes = await downloadMusic(media, context.sampleRate, controller.signal);
+    } catch (error) {
+      controller.signal.throwIfAborted();
+      if (!(await renew())) throw error;
+      bytes = await downloadMusic(media, context.sampleRate, controller.signal);
     }
-    if (!bytes) return { fallbackReason: "size" };
+    if (typeof bytes === "string") return { fallbackReason: bytes };
     let buffer: AudioBuffer;
     try {
       buffer = await context.decodeAudioData(bytes);
