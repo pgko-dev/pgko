@@ -9,8 +9,9 @@ bun add @pgko.dev/schema valibot i18next
 ```
 
 ```ts
-import { EmailSchema } from "@pgko.dev/schema";
 import * as v from "valibot";
+
+import { EmailSchema } from "@pgko.dev/schema";
 
 const result = v.safeParse(EmailSchema, "user@example.com");
 ```

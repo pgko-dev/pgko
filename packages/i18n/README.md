@@ -9,9 +9,10 @@ bun add @pgko.dev/i18n i18next
 ```
 
 ```ts
+import i18next from "i18next";
+
 import { defaultLanguage, defaultNamespace } from "@pgko.dev/i18n";
 import { languageResources } from "@pgko.dev/i18n/all";
-import i18next from "i18next";
 
 await i18next.init({
   lng: defaultLanguage,

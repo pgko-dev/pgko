@@ -483,6 +483,11 @@ test("follow scrolls linearly within columns and across their boundaries", async
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
 
+  // Pause is also shown while audio is buffering; sample only once its clock is running.
+  await expect
+    .poll(() => page.evaluate(() => window.previewTransport?.snapshot().state))
+    .toBe("playing");
+
   const samples = await field.evaluate(async (element) => {
     const samples: { position: number; left: number; cursorVisible: boolean }[] = [];
     const started = performance.now();
