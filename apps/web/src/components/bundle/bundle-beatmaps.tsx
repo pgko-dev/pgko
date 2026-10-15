@@ -1,11 +1,12 @@
 import { useMediaQuery } from "@mantine/hooks";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { SongSummary } from "@pgko.dev/schema";
 
 import { PreviewPlaceholder } from "@/components/preview/placeholder";
 import Preview from "@/components/preview/preview";
+import { useBundleBeatmapSearch } from "@/hooks/use-bundle-beatmap-search";
 import { usePreviewAudio } from "@/hooks/use-preview-audio";
 import { PreviewLoader } from "@/lib/preview/loader";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,8 @@ export function BundleBeatmaps({
 }>) {
   const { t } = useTranslation();
   const { audioRef, playingId, setPlayingId, playPreview, stopPreview } = usePreviewAudio();
-  const [selectedId, setSelectedId] = useState<string | null>(() => songs[0]?.id ?? null);
+  const { selectedId, setSelectedId } = useBundleBeatmapSearch(songs);
+  const [revisionStale, setRevisionStale] = useState(false);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -38,15 +40,20 @@ export function BundleBeatmaps({
   const scrollPosition = useRef(0);
   const loader = useMemo(() => new PreviewLoader(), []);
   const selectedIndex = songs.findIndex((song) => song.id === selectedId);
-  const selected = songs[selectedIndex];
-  const closePreview = useCallback(() => setSelectedId(null), []);
+  const selected = revisionStale ? undefined : songs[selectedIndex];
+  const closePreview = useCallback(() => setSelectedId(null), [setSelectedId]);
   const revisionChanged = useCallback(() => {
-    setSelectedId(null);
+    setRevisionStale(true);
     onRevisionChange();
   }, [onRevisionChange]);
 
+  useEffect(() => {
+    stopPreview();
+  }, [selectedId, stopPreview]);
+
   const select = (song: SongSummary) => {
     stopPreview();
+    setRevisionStale(false);
     setSelectedId(song.id);
     setPickerOpen(false);
   };

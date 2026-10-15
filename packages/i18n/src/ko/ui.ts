@@ -352,6 +352,7 @@ export const ui = {
     searchMinLengthHint: "검색하려면 2글자 이상 입력하세요",
     toggleOrder: "정렬 순서 바꾸기",
     playPreview: "미리듣기",
+    pausePreview: "미리듣기 일시 정지",
     download: "곡팩 다운로드",
     scrollUp: "위로 스크롤",
     scrollDown: "아래로 스크롤",

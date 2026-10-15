@@ -12,6 +12,7 @@ import { createRoot } from "react-dom/client";
 import { BundleDetailContent } from "../../src/components/bundle/bundle-detail";
 import { BundleList } from "../../src/components/bundle/bundle-list";
 import { AuthProvider } from "../../src/hooks/auth";
+import { validateBundleBeatmapSearch } from "../../src/lib/bundle-beatmap-search";
 import { validateProfileBundleSearch } from "../../src/lib/bundle-list-search";
 import { bundle, bundleId } from "../fixtures/bundle";
 
@@ -42,6 +43,7 @@ function ListFixture() {
 const detailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/bundles/$bundleId",
+  validateSearch: validateBundleBeatmapSearch,
   component: () => <BundleDetailContent data={bundle} bundleId={bundleId} songs={[]} />,
 });
 const router = createRouter({

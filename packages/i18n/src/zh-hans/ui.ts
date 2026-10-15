@@ -349,6 +349,7 @@ export const ui = {
     searchMinLengthHint: "请至少输入 2 个字符",
     toggleOrder: "切换排序方向",
     playPreview: "试听",
+    pausePreview: "暂停试听",
     download: "下载曲包",
     scrollUp: "向上滚动",
     scrollDown: "向下滚动",

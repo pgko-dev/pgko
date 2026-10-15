@@ -339,6 +339,60 @@ for (const returnMethod of ["page", "browser"] as const) {
   });
 }
 
+test("card scrollbar keeps dragging outside the popover and releases normally", async ({
+  page,
+}, info) => {
+  test.skip(Boolean(info.project.use.isMobile), "Popover dragging needs a mouse pointer.");
+  await page.route(/\/api\/bundles(?:\?|$)/, (route) =>
+    route.fulfill({ json: { bundles: [{ ...bundle, songs }], nextCursor: null } }),
+  );
+  await page.goto("/e2e/browser/bundle-filters.html");
+  const card = page.getByRole("group").filter({
+    has: page.getByRole("link", { name: bundle.title!, exact: true }),
+  });
+  await expect(card).toBeVisible();
+  const bounds = (await card.boundingBox())!;
+  const trigger = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height - 8 };
+  await page.mouse.move(trigger.x, trigger.y);
+
+  const viewport = card.locator('[data-slot="scroll-area-viewport"]');
+  const thumb = card.locator('[data-slot="scroll-area-thumb"]');
+  await expect(thumb).toBeVisible();
+  await expect(card.locator("[inert]")).toHaveCount(0);
+  const trackBounds = (await card.locator('[data-slot="scroll-area"]').boundingBox())!;
+  const thumbBounds = (await thumb.boundingBox())!;
+  expect(trackBounds.x + trackBounds.width - thumbBounds.x - thumbBounds.width).toBeCloseTo(2);
+  const start = {
+    x: thumbBounds.x + thumbBounds.width / 2,
+    y: thumbBounds.y + thumbBounds.height / 2,
+  };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  try {
+    await page.mouse.move(trigger.x, start.y + 15, { steps: 5 });
+    await expect.poll(() => viewport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    const insideScroll = await viewport.evaluate((element) => element.scrollTop);
+    const outsideX = bounds.x + bounds.width + 24;
+    await page.mouse.move(outsideX, start.y + 50, { steps: 8 });
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(insideScroll);
+    await expect(card.locator("[inert]")).toHaveCount(0);
+    const outsideScroll = await viewport.evaluate((element) => element.scrollTop);
+    await page.mouse.move(outsideX, start.y + 30, { steps: 5 });
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeLessThan(outsideScroll);
+  } finally {
+    await page.mouse.up();
+  }
+  const finalScroll = await viewport.evaluate((element) => element.scrollTop);
+  await expect(card.locator("[inert]")).toHaveCount(1);
+  await page.mouse.move(trigger.x, trigger.y);
+  await expect(card.locator("[inert]")).toHaveCount(0);
+  expect(await viewport.evaluate((element) => element.scrollTop)).toBeCloseTo(finalScroll);
+});
+
 test("draft links retain their scope and describe creation order", async ({ page }) => {
   const requests = await mockBundleList(page);
   await page.goto("/e2e/browser/bundle-filters.html?mode=draft&q=draft&order=asc");

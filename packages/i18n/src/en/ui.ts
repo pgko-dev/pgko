@@ -353,6 +353,7 @@ export const ui = {
     searchMinLengthHint: "Type at least 2 characters to search",
     toggleOrder: "Toggle sort order",
     playPreview: "Play preview",
+    pausePreview: "Pause preview",
     download: "Download song pack",
     scrollUp: "Scroll up",
     scrollDown: "Scroll down",

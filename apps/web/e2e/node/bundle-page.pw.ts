@@ -12,10 +12,12 @@ async function setup(
     firstLoad,
     beforeOpen,
     getRevision = () => 1,
+    search = "",
   }: {
     firstLoad?: Promise<void>;
     beforeOpen?: () => Promise<void>;
     getRevision?: () => number;
+    search?: string;
   } = {},
 ) {
   let requests = 0;
@@ -55,7 +57,7 @@ async function setup(
     route.fulfill({ contentType: "audio/wav", body: wave() }),
   );
   await beforeOpen?.();
-  await page.goto("/e2e/browser/bundle-page.html");
+  await page.goto(`/e2e/browser/bundle-page.html${search}`);
   await expect(page.getByRole("region", { name: "Beatmap browser", exact: true })).toBeVisible();
   return () => requests;
 }
@@ -224,7 +226,7 @@ test("collapse and picker preserve playback; beatmap changes reset it and coordi
   );
 });
 
-test("rapid selection ignores obsolete loading and a new revision selects its first beatmap", async ({
+test("rapid selection ignores obsolete loading and a new revision retains its selected beatmap", async ({
   page,
 }, info) => {
   let finishFirstLoad = () => {};
@@ -248,14 +250,56 @@ test("rapid selection ignores obsolete loading and a new revision selects its fi
   await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toHaveCount(0);
   revision = 2;
   await page.getByRole("button", { name: "Change revision", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Beatmap 02 - Second artist" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Playback position" })).toHaveValue("0");
   await showList(page);
   await expect(page.getByRole("searchbox")).toHaveValue("");
   await expect(page.getByRole("button", { name: /^Preview beatmap:/, pressed: true })).toHaveCount(
     1,
   );
-  await expect(row(page, 1)).toHaveAttribute("aria-pressed", "true");
+  await expect(row(page, 2)).toHaveAttribute("aria-pressed", "true");
+});
+
+test("a shared beatmap URL restores selection and switches without adding history entries", async ({
+  page,
+}) => {
+  const chartRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/\/fixture-\d+\.ugc$/.test(request.url())) chartRequests.push(request.url());
+  });
+  await setup(page, { search: `?bId=${songs[2].id}` });
+  await expect(page.getByRole("heading", { name: "Beatmap 03 - First artist" })).toBeVisible();
+  expect(chartRequests.some((url) => url.endsWith("/fixture-1.ugc"))).toBe(false);
+  const historyLength = await page.evaluate(() => window.history.length);
+
+  await page.getByRole("button", { name: "Next beatmap", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`bId=${songs[3].id}$`));
+  await expect(page.getByRole("heading", { name: "Beatmap 04 - Second artist" })).toBeVisible();
+  await showList(page);
+  await row(page, 2).click();
+  await expect(page).toHaveURL(new RegExp(`bId=${songs[1].id}$`));
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Beatmap 02 - Second artist" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Close preview", exact: true }).click();
+  await expect(page).toHaveURL(/bId=null$/);
+  await expect(page.locator("canvas")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Beatmap browser", exact: true })).toBeVisible();
+  await expect(page.locator("canvas")).toHaveCount(0);
+  await page.getByRole("button", { name: "Next beatmap", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`bId=${songs[0].id}$`));
+  await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toBeVisible();
+});
+
+test("an unknown beatmap ID resolves to the first beatmap and repairs the URL", async ({
+  page,
+}) => {
+  await setup(page, { search: "?bId=removed-chart" });
+  await expect(page.getByRole("heading", { name: "Beatmap 01 - First artist" })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`bId=${songs[0].id}$`));
 });
 
 const stalledRequests = [

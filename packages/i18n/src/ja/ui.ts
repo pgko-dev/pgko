@@ -351,6 +351,7 @@ export const ui = {
     searchMinLengthHint: "2 文字以上入力してください",
     toggleOrder: "並び順を切り替え",
     playPreview: "プレビュー再生",
+    pausePreview: "プレビューを一時停止",
     download: "楽曲パックをダウンロード",
     scrollUp: "上にスクロール",
     scrollDown: "下にスクロール",

@@ -2,12 +2,9 @@ import { Link, useLocation } from "@tanstack/react-router";
 import {
   CalendarArrowUp,
   CalendarCheck2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   Clock,
-  Dot,
   Download,
   Link2,
   Music2,
@@ -18,16 +15,7 @@ import {
 } from "lucide-react";
 import { LazyMotion, domAnimation } from "motion/react";
 import * as m from "motion/react-m";
-import {
-  memo,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { isDraftLikeBundleStatus, sortSongs } from "@pgko.dev/common";
@@ -38,6 +26,7 @@ import { UploaderWithCollaboratorsRow } from "@/components/bundle/uploader-with-
 import { DifficultyBadge, DIFFICULTY_LEVEL_PILL_WIDTH } from "@/components/difficulty-badge";
 import { RemoteImage } from "@/components/remote-image";
 import { Badge } from "@/components/ui/badge";
+import { ScrollAreaRoot, ScrollAreaViewport, ScrollBar } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/auth";
 import { useBundleDownload } from "@/hooks/use-bundle-download";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -52,6 +41,7 @@ const POPOVER_VISIBLE_ROWS = 5;
 const POPOVER_ANIMATION_DURATION = 0.15;
 
 const GLASS_BG = "var(--glass-bg)";
+const SONG_LIST_BG = "color-mix(in oklab, var(--glass-bg), var(--card) 65%)";
 
 function formatTimeLeft(expiresAt: Date): string {
   const now = Date.now();
@@ -104,7 +94,7 @@ function CardDownloadButton({
   const { downloadUrl } = useBundleDownload(bundleId);
 
   const className = cn(
-    "flex size-8 shrink-0 items-center justify-center rounded-full transition-[color,transform] duration-200 ease-out",
+    "flex size-8 shrink-0 items-center justify-center rounded-none transition-[color,transform] duration-200 ease-out",
     "text-muted-foreground hover:bg-muted hover:text-foreground",
     "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
     "disabled:pointer-events-none disabled:opacity-60",
@@ -135,7 +125,7 @@ function CardVideoButton({
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-full transition-[color,transform] duration-200 ease-out",
+        "flex size-8 shrink-0 items-center justify-center rounded-none transition-[color,transform] duration-200 ease-out",
         "text-muted-foreground hover:bg-muted hover:text-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
       )}
@@ -148,7 +138,7 @@ function CardVideoButton({
 }
 
 const CAROUSEL_NAV_BUTTON_CLASS = cn(
-  "flex size-8 shrink-0 items-center justify-center rounded-full transition-[color,transform] duration-200 ease-out",
+  "flex size-8 shrink-0 items-center justify-center rounded-none transition-[color,transform] duration-200 ease-out",
   "text-muted-foreground hover:bg-muted hover:text-foreground",
   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
 );
@@ -352,12 +342,26 @@ const BundleCardMeta = memo(function BundleCardMeta({
 
 // ─── Song list───────
 
+const SONG_ACTION_BUTTON_CLASS = cn(
+  "flex size-6 shrink-0 items-center justify-center rounded-none text-muted-foreground transition-[color,opacity] duration-150 hover:text-foreground",
+  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
+);
+
+const SONG_ACTION_REVEAL_CLASS = cn(
+  "md:[@media(hover:hover)_and_(pointer:fine)]:pointer-events-none md:[@media(hover:hover)_and_(pointer:fine)]:opacity-0",
+  "group-hover/song:pointer-events-auto group-hover/song:opacity-100 group-has-[:focus-visible]/song:pointer-events-auto group-has-[:focus-visible]/song:opacity-100",
+);
+
 function SongListItem({
   song,
+  previewBundleId,
+  onNavigate,
   playingSongId,
   onPlayPreview,
 }: Readonly<{
   song: BundleListSong;
+  previewBundleId?: string;
+  onNavigate: () => void;
   playingSongId?: string | null;
   onPlayPreview?: (song: BundleListSong) => void;
 }>) {
@@ -365,14 +369,54 @@ function SongListItem({
   const isPlaying = playingSongId === song.id;
   const canPlay = Boolean(song.previewUrl && onPlayPreview);
   const hasVideo = Boolean(song.videoUrl);
+  const previewLabel = t(isPlaying ? "ui.bundleList.pausePreview" : "ui.bundleList.playPreview");
 
   return (
     <li
-      className="group/song flex min-h-0 w-full min-w-0 flex-shrink-0 items-center gap-1.5 rounded px-1 py-0.5 text-[11px]"
-      style={{ minHeight: POPOVER_ROW_HEIGHT }}
+      className="group/song flex w-full min-w-0 shrink-0 items-center gap-1.5 rounded-none px-1 py-0.5 text-xs transition-colors duration-150 hover:bg-foreground/5 has-[:focus-visible]:bg-foreground/5"
+      style={{ height: POPOVER_ROW_HEIGHT }}
     >
-      <div className="flex items-center gap-0.5">
-        {canPlay ? (
+      <MiniDifficultyBadge song={song} />
+      <span
+        className={cn(
+          DIFFICULTY_LEVEL_PILL_WIDTH,
+          "shrink-0 overflow-hidden text-center text-[11px] text-muted-foreground tabular-nums",
+        )}
+      >
+        <AutoScrollMarquee className="w-full">
+          {song.difficulty === 4 ? `${song.level}★` : song.constant.toFixed(1)}
+        </AutoScrollMarquee>
+      </span>
+      {previewBundleId ? (
+        <Link
+          to="/bundles/$bundleId"
+          params={{ bundleId: previewBundleId }}
+          search={{ bId: song.id }}
+          onClick={onNavigate}
+          aria-label={song.title}
+          title={t("ui.preview.open")}
+          className="min-w-0 flex-1 rounded-none font-medium hover:underline hover:underline-offset-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <AutoScrollMarquee>{song.title}</AutoScrollMarquee>
+        </Link>
+      ) : (
+        <AutoScrollMarquee className="min-w-0 flex-1 font-medium">{song.title}</AutoScrollMarquee>
+      )}
+      <div className="flex w-[50px] shrink-0 items-center justify-end gap-0.5">
+        {hasVideo && (
+          <a
+            href={song.videoUrl ?? undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className={cn(SONG_ACTION_BUTTON_CLASS, SONG_ACTION_REVEAL_CLASS)}
+            title={t("ui.bundlePage.videoLink")}
+            aria-label={t("ui.bundlePage.videoLink")}
+          >
+            <Video className="size-3.5 shrink-0" aria-hidden strokeWidth={2} />
+          </a>
+        )}
+        {canPlay && (
           <button
             type="button"
             onClick={(e) => {
@@ -381,66 +425,22 @@ function SongListItem({
               onPlayPreview?.(song);
             }}
             className={cn(
-              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-150",
-              "text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
+              SONG_ACTION_BUTTON_CLASS,
               isPlaying
                 ? "bg-amber-500/20 text-amber-600 hover:bg-amber-500/30 dark:text-amber-400"
-                : "hover:bg-muted",
+                : SONG_ACTION_REVEAL_CLASS,
             )}
-            title={t("ui.bundleList.playPreview")}
-            aria-label={t("ui.bundleList.playPreview")}
+            title={previewLabel}
+            aria-label={previewLabel}
           >
             {isPlaying ? (
-              <Pause className="size-4 shrink-0" aria-hidden strokeWidth={2} />
+              <Pause className="size-3.5 shrink-0" aria-hidden strokeWidth={2} />
             ) : (
-              <Play className="size-4 shrink-0" aria-hidden strokeWidth={2} />
+              <Play className="size-3.5 shrink-0" aria-hidden strokeWidth={2} />
             )}
           </button>
-        ) : (
-          <span
-            className="flex w-6 shrink-0 items-center justify-center text-muted-foreground"
-            aria-hidden
-          >
-            <Dot className="size-4" />
-          </span>
-        )}
-        {hasVideo ? (
-          <a
-            href={song.videoUrl ?? undefined}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className={cn(
-              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-150",
-              "text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
-              "hover:bg-muted",
-            )}
-            title={t("ui.bundlePage.videoLink")}
-            aria-label={t("ui.bundlePage.videoLink")}
-          >
-            <Video className="size-4 shrink-0" aria-hidden strokeWidth={2} />
-          </a>
-        ) : (
-          <span
-            className="flex w-6 shrink-0 items-center justify-center text-muted-foreground"
-            aria-hidden
-          >
-            <Dot className="size-4" />
-          </span>
         )}
       </div>
-      <MiniDifficultyBadge song={song} />
-      <span
-        className={cn(
-          DIFFICULTY_LEVEL_PILL_WIDTH,
-          "shrink-0 overflow-hidden text-center text-muted-foreground tabular-nums",
-        )}
-      >
-        <AutoScrollMarquee className="w-full">
-          {song.difficulty === 4 ? `${song.level}★` : song.constant.toFixed(1)}
-        </AutoScrollMarquee>
-      </span>
-      <AutoScrollMarquee className="min-w-0 flex-1 font-medium">{song.title}</AutoScrollMarquee>
     </li>
   );
 }
@@ -448,112 +448,78 @@ function SongListItem({
 function SongListWithScroll({
   songs,
   songsCount,
+  previewBundleId,
+  onNavigate,
   playingSongId,
   onPlayPreview,
-  listViewportRef,
-  scrollState,
-  onScroll,
-  onScrollUp,
-  onScrollDown,
   maxHeight,
+  onScrollbarDragChange,
 }: Readonly<{
   songs: BundleListSong[];
   songsCount: number;
+  previewBundleId?: string;
+  onNavigate: () => void;
   playingSongId?: string | null;
   onPlayPreview?: (song: BundleListSong) => void;
-  listViewportRef: React.RefObject<HTMLUListElement | null>;
-  scrollState: { canUp: boolean; canDown: boolean };
-  onScroll: () => void;
-  onScrollUp: () => void;
-  onScrollDown: () => void;
   maxHeight?: number;
+  onScrollbarDragChange?: (dragging: boolean) => void;
 }>) {
   const { t } = useTranslation();
 
   return (
-    <div className="flex w-full min-w-0 items-stretch gap-0.5">
-      <ul
-        ref={listViewportRef}
-        aria-label={t("ui.bundleList.totalBeatmaps", { count: songsCount })}
-        className={cn(
-          "m-0 no-scrollbar min-h-0 flex-1 list-none overflow-x-hidden overflow-y-auto p-0",
-          "flex flex-col gap-0.5 pr-0.5",
-        )}
-        style={{
-          ...(maxHeight === undefined ? {} : { maxHeight }),
-          scrollbarWidth: "none",
-          WebkitOverflowScrolling: "touch",
-        }}
-        onScroll={onScroll}
-      >
-        {songs.map((song) => (
-          <SongListItem
-            key={song.id}
-            song={song}
-            playingSongId={playingSongId}
-            onPlayPreview={onPlayPreview}
-          />
-        ))}
-      </ul>
-
-      {songs.length > POPOVER_VISIBLE_ROWS && (
-        <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 self-stretch border-l border-foreground/10 pl-0.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onScrollUp();
-            }}
-            disabled={!scrollState.canUp}
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded transition-colors duration-150",
-              "text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
-              "disabled:pointer-events-none disabled:opacity-30",
-            )}
-            aria-label={t("ui.bundleList.scrollUp")}
-            title={t("ui.bundleList.scrollUp")}
-          >
-            <ChevronUp className="size-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onScrollDown();
-            }}
-            disabled={!scrollState.canDown}
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded transition-colors duration-150",
-              "text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card focus-visible:outline-none",
-              "disabled:pointer-events-none disabled:opacity-30",
-            )}
-            aria-label={t("ui.bundleList.scrollDown")}
-            title={t("ui.bundleList.scrollDown")}
-          >
-            <ChevronDown className="size-4" aria-hidden />
-          </button>
-        </div>
-      )}
-    </div>
+    <ScrollAreaRoot
+      className="group/song-scroll min-h-0 w-full min-w-0 flex-1 py-1"
+      style={{
+        height:
+          maxHeight === undefined
+            ? "100%"
+            : Math.min(songs.length * POPOVER_ROW_HEIGHT, maxHeight) + 8,
+      }}
+      overflowEdgeThreshold={1}
+    >
+      <ScrollAreaViewport className="overscroll-y-contain">
+        <ul
+          aria-label={t("ui.bundleList.totalBeatmaps", { count: songsCount })}
+          className="m-0 flex min-w-0 list-none flex-col pr-(--scrollbar-size) pl-1"
+        >
+          {songs.map((song) => (
+            <SongListItem
+              key={song.id}
+              song={song}
+              previewBundleId={previewBundleId}
+              onNavigate={onNavigate}
+              playingSongId={playingSongId}
+              onPlayPreview={onPlayPreview}
+            />
+          ))}
+        </ul>
+      </ScrollAreaViewport>
+      <ScrollBar
+        onGotPointerCapture={() => onScrollbarDragChange?.(true)}
+        onLostPointerCapture={() => onScrollbarDragChange?.(false)}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1 right-(--scrollbar-size) left-1 hidden h-1 group-data-overflow-y-start/song-scroll:block"
+        style={{ background: `linear-gradient(to bottom, ${SONG_LIST_BG}, transparent)` }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-(--scrollbar-size) bottom-1 left-1 hidden h-1 group-data-overflow-y-end/song-scroll:block"
+        style={{ background: `linear-gradient(to top, ${SONG_LIST_BG}, transparent)` }}
+      />
+    </ScrollAreaRoot>
   );
 }
 
 // ─── BundleCard hook
 
-function useBundleCardPopover(
-  isMobile: boolean,
-  hasSongs: boolean,
-  _coverUrl: string | null | undefined,
-) {
-  const listViewportRef = useRef<HTMLUListElement>(null);
+function useBundleCardPopover(isMobile: boolean, hasSongs: boolean) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHoverRegionActive, setIsHoverRegionActive] = useState(false);
   const [isPopoverHover, setIsPopoverHover] = useState(false);
-  const [popoverHeight, setPopoverHeight] = useState(0);
-  const [scrollState, setScrollState] = useState({ canUp: false, canDown: false });
+  const [isScrollbarDragging, setIsScrollbarDragging] = useState(false);
 
   const pointerRef = useRef<{
     clientX: number;
@@ -639,44 +605,8 @@ function useBundleCardPopover(
 
   useEffect(() => () => cancelHoverRaf(), [cancelHoverRaf]);
 
-  const showHoverPopover = !isMobile && hasSongs && (isHoverRegionActive || isPopoverHover);
-
-  useLayoutEffect(() => {
-    if (isMobile || !hasSongs || !popoverRef.current) return;
-    const el = popoverRef.current;
-    const update = () => setPopoverHeight(el.getBoundingClientRect().height);
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    update();
-    return () => observer.disconnect();
-  }, [hasSongs, isMobile]);
-
-  const updateScrollState = useCallback(() => {
-    const el = listViewportRef.current;
-    if (!el) return;
-    setScrollState({
-      canUp: el.scrollTop > 0,
-      canDown: el.scrollTop < el.scrollHeight - el.clientHeight - 1,
-    });
-  }, []);
-
-  useLayoutEffect(() => {
-    const el = listViewportRef.current;
-    if (el && (hasSongs || showHoverPopover)) {
-      el.scrollTop = 0;
-      const raf = requestAnimationFrame(() => updateScrollState());
-      return () => cancelAnimationFrame(raf);
-    }
-  }, [hasSongs, showHoverPopover, updateScrollState]);
-
-  const scrollList = useCallback((direction: "up" | "down") => {
-    const el = listViewportRef.current;
-    if (!el) return;
-    el.scrollBy({
-      top: direction === "up" ? -POPOVER_ROW_HEIGHT : POPOVER_ROW_HEIGHT,
-      behavior: "smooth",
-    });
-  }, []);
+  const showHoverPopover =
+    !isMobile && hasSongs && (isHoverRegionActive || isPopoverHover || isScrollbarDragging);
 
   const handleMouseMove = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -700,29 +630,23 @@ function useBundleCardPopover(
   }, [isMobile, cancelHoverRaf]);
 
   return {
-    listViewportRef,
     popoverRef,
     cardRef,
     showHoverPopover,
-    popoverHeight,
-    scrollState,
-    updateScrollState,
-    scrollList,
     handleMouseMove,
     handleMouseLeave,
+    setIsScrollbarDragging,
   };
 }
 
 function BundleCardSongPopover({
   hasSongs,
   showHoverPopover,
-  popoverHeight,
   popoverRef,
   songListProps,
 }: Readonly<{
   hasSongs: boolean;
   showHoverPopover: boolean;
-  popoverHeight: number;
   popoverRef: React.RefObject<HTMLDivElement | null>;
   songListProps: React.ComponentProps<typeof SongListWithScroll>;
 }>) {
@@ -742,12 +666,12 @@ function BundleCardSongPopover({
       aria-hidden={!showHoverPopover}
       inert={showHoverPopover ? undefined : true}
       className={cn(
-        "pointer-events-none absolute top-full -right-0.5 -left-0.5 z-30 origin-top overflow-hidden rounded-b-xl",
+        "pointer-events-none absolute top-full -right-0.5 -left-0.5 z-30 origin-top overflow-hidden rounded-none",
         "border-x-2 border-t border-b-2 border-foreground/8 border-t-foreground/5 text-card-foreground backdrop-blur-xl",
         "group-hover/bundle:border-x-foreground/15 group-hover/bundle:border-b-foreground/15 dark:border-x-foreground/10 dark:border-b-foreground/10 dark:group-hover/bundle:border-x-foreground/20 dark:group-hover/bundle:border-b-foreground/20",
         showHoverPopover && "pointer-events-auto",
       )}
-      style={{ height: popoverHeight, background: GLASS_BG }}
+      style={{ background: SONG_LIST_BG }}
       initial={false}
       animate={{
         clipPath: showHoverPopover ? "inset(0 0 0% 0)" : "inset(0 0 100% 0)",
@@ -755,7 +679,7 @@ function BundleCardSongPopover({
       }}
       transition={popoverTransition}
     >
-      <div ref={popoverRef} className="min-h-0 p-1">
+      <div ref={popoverRef} className="min-h-0">
         <SongListWithScroll
           {...songListProps}
           maxHeight={POPOVER_ROW_HEIGHT * POPOVER_VISIBLE_ROWS}
@@ -842,43 +766,33 @@ export const BundleCard = memo(
     }, []);
 
     const {
-      listViewportRef,
       popoverRef,
       cardRef,
       showHoverPopover,
-      popoverHeight,
-      scrollState,
-      updateScrollState,
-      scrollList,
       handleMouseMove,
       handleMouseLeave,
-    } = useBundleCardPopover(isMobile, hasSongs, bundle.coverUrl);
-
-    const onScrollUp = useCallback(() => scrollList("up"), [scrollList]);
-    const onScrollDown = useCallback(() => scrollList("down"), [scrollList]);
+      setIsScrollbarDragging,
+    } = useBundleCardPopover(isMobile, hasSongs);
 
     const sharedSongListProps = useMemo(
       () => ({
         songs: sortedSongs,
         songsCount: bundle.songs.length,
+        previewBundleId: isDraftLikeBundleStatus(bundle.status) ? undefined : bundle.id,
+        onNavigate: setReturnToBeforeBundleNav,
         playingSongId,
         onPlayPreview,
-        listViewportRef,
-        scrollState,
-        onScroll: updateScrollState,
-        onScrollUp,
-        onScrollDown,
+        onScrollbarDragChange: setIsScrollbarDragging,
       }),
       [
         sortedSongs,
         bundle.songs.length,
+        bundle.id,
+        bundle.status,
+        setReturnToBeforeBundleNav,
         playingSongId,
         onPlayPreview,
-        listViewportRef,
-        scrollState,
-        updateScrollState,
-        onScrollUp,
-        onScrollDown,
+        setIsScrollbarDragging,
       ],
     );
 
@@ -900,8 +814,8 @@ export const BundleCard = memo(
         <m.div
           role="group"
           className={cn(
-            "group/bundle relative rounded-xl border-2 border-foreground/8 transition-[box-shadow,border-color] duration-200 hover:border-foreground/15 hover:shadow-[0_0_16px_rgba(0,0,0,0.1)] dark:border-foreground/10 dark:hover:border-foreground/20 dark:hover:shadow-[0_0_16px_rgba(0,0,0,0.3)]",
-            showHoverPopover && "z-41 rounded-b-none",
+            "group/bundle relative rounded-none border-2 border-foreground/8 transition-[box-shadow,border-color] duration-200 hover:border-foreground/15 hover:shadow-[0_0_16px_rgba(0,0,0,0.1)] dark:border-foreground/10 dark:hover:border-foreground/20 dark:hover:shadow-[0_0_16px_rgba(0,0,0,0.3)]",
+            showHoverPopover && "z-41",
           )}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
@@ -910,14 +824,14 @@ export const BundleCard = memo(
             <div
               ref={carouselRef}
               onScroll={updateCarouselScrollState}
-              className="no-scrollbar flex min-w-0 snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-xl backdrop-blur-lg"
+              className="no-scrollbar flex min-w-0 snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-none backdrop-blur-lg"
               style={{ scrollbarWidth: "none", height: coverSize, background: GLASS_BG }}
             >
               <div
                 className="relative min-w-0 shrink-0 basis-full snap-start snap-always overflow-hidden"
                 style={{ height: coverSize }}
               >
-                <div className="relative flex h-full min-h-0 w-full min-w-0 overflow-hidden rounded-xl text-card-foreground">
+                <div className="relative flex h-full min-h-0 w-full min-w-0 overflow-hidden rounded-none text-card-foreground">
                   <Link
                     to={linkToManage ? "/bundles/$bundleId/manage" : "/bundles/$bundleId"}
                     params={{ bundleId: bundle.id }}
@@ -931,8 +845,11 @@ export const BundleCard = memo(
                   </div>
                 </div>
               </div>
-              <div className="relative flex min-w-0 shrink-0 basis-full snap-start snap-always flex-col rounded-r-xl border-l border-foreground/5 text-card-foreground">
-                <div className="relative z-10 flex min-h-0 min-w-0 flex-1 items-stretch gap-0.5 p-1">
+              <div
+                className="relative flex min-w-0 shrink-0 basis-full snap-start snap-always flex-col rounded-none border-l border-foreground/5 text-card-foreground"
+                style={{ background: SONG_LIST_BG }}
+              >
+                <div className="relative z-10 flex min-h-0 min-w-0 flex-1 items-stretch">
                   <SongListWithScroll {...sharedSongListProps} />
                 </div>
               </div>
@@ -941,10 +858,7 @@ export const BundleCard = memo(
             <div className="relative">
               <div
                 ref={cardRef}
-                className={cn(
-                  "relative flex min-h-0 overflow-hidden rounded-xl text-card-foreground backdrop-blur-lg transition-shadow duration-200",
-                  showHoverPopover && "rounded-b-none",
-                )}
+                className="relative flex min-h-0 overflow-hidden rounded-none text-card-foreground backdrop-blur-lg transition-shadow duration-200"
                 style={{ height: coverSize, background: GLASS_BG }}
               >
                 <Link
@@ -962,7 +876,7 @@ export const BundleCard = memo(
               <div
                 className={cn(
                   "pointer-events-none absolute top-0 right-0 bottom-0 z-25 w-36",
-                  "opacity-0 transition-opacity duration-200 ease-out group-hover/bundle:opacity-100",
+                  "opacity-0 transition-opacity duration-200 ease-out group-focus-within/bundle:opacity-100 group-hover/bundle:opacity-100",
                 )}
                 style={{
                   boxShadow: "inset -48px 0 32px 8px var(--glass-bg)",
@@ -972,7 +886,7 @@ export const BundleCard = memo(
               <div
                 className={cn(
                   "absolute inset-y-0 right-4 z-30 flex h-full flex-col items-center justify-evenly overflow-hidden max-md:hidden",
-                  "translate-x-4 opacity-0 group-hover/bundle:translate-x-0 group-hover/bundle:opacity-100",
+                  "translate-x-4 opacity-0 group-focus-within/bundle:translate-x-0 group-focus-within/bundle:opacity-100 group-hover/bundle:translate-x-0 group-hover/bundle:opacity-100",
                   "transition-all duration-200 ease-out",
                 )}
               >
@@ -986,7 +900,6 @@ export const BundleCard = memo(
               <BundleCardSongPopover
                 hasSongs={hasSongs}
                 showHoverPopover={showHoverPopover}
-                popoverHeight={popoverHeight}
                 popoverRef={popoverRef}
                 songListProps={sharedSongListProps}
               />
@@ -994,7 +907,7 @@ export const BundleCard = memo(
           )}
           {isMobile && (
             <div
-              className="flex items-center justify-evenly rounded-b-xl border-t border-foreground/5 px-6 backdrop-blur-sm"
+              className="flex items-center justify-evenly rounded-none border-t border-foreground/5 px-6 backdrop-blur-sm"
               style={{ height: MOBILE_ACTION_BAR_HEIGHT, background: GLASS_BG }}
             >
               <CarouselNavButton
