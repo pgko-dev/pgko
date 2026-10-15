@@ -119,14 +119,17 @@ export class ChartTransport {
 
   get diagnostics(): TransportDiagnostics {
     const buffer = this.buffered?.buffer;
+    let backend: TransportDiagnostics["backend"] = "streaming";
+    if (this.preparing) {
+      backend = "preparing";
+    } else if (this.musicUnavailable) {
+      backend = "silent";
+    } else if (this.usesBuffer) {
+      backend = "buffered";
+    }
+
     return {
-      backend: this.preparing
-        ? "preparing"
-        : this.musicUnavailable
-          ? "silent"
-          : this.usesBuffer
-            ? "buffered"
-            : "streaming",
+      backend,
       fallbackReason:
         this.options.musicMode === "auto" && this.rate !== 1
           ? "rate"
@@ -247,52 +250,14 @@ export class ChartTransport {
         !this.musicUnavailable &&
         !this.buffered
       ) {
-        this.state = "buffering";
-        this.preparing = true;
-        this.startingMedia = true;
-        this.musicGain!.gain.value = 0;
-        // Prime the fallback from the gesture too; decoded playback does not depend on its success.
-        void this.media.play().catch(() => {});
-        this.emit();
-        this.musicLoading ??= prepareBufferedMusic(
-          this.media,
-          this.context!,
-          this.requests.signal,
-          this.renewMusic,
-        );
-        const [buffered] = await audioReady(
-          Promise.all([this.musicLoading, resume, this.tapLoading]),
-          this.requests.signal,
-        );
-        if (this.disposed || generation !== this.generation) return;
-        this.buffered = buffered;
-        this.preparing = false;
-        this.media.pause();
-        this.startingMedia = false;
-        this.musicGain!.gain.value = this.musicVolume;
-        this.unlocked = true;
+        await this.prepareMusic(resume, generation);
       } else if (this.unlocked) {
         this.state = "buffering";
         this.emit();
         await audioReady(resume, this.requests.signal);
       } else await this.unlock(resume, generation);
       if (this.disposed || generation !== this.generation) return;
-      this.anchor(this.anchorPosition);
-      this.queue.reset(this.anchorPosition);
-      this.state = "playing";
-      if (this.usesBuffer) {
-        this.anchorTime += 0.05;
-        this.startBuffer();
-      } else if (
-        !this.musicUnavailable &&
-        this.anchorPosition >= this.options.timing.audioStart &&
-        this.anchorPosition < this.musicEnd()
-      ) {
-        this.startMusic(this.anchorPosition, generation);
-      }
-      this.timer ??= setInterval(this.pump, 25);
-      this.pump();
-      this.emit();
+      this.startPlayback(generation);
     } catch (error) {
       if (this.disposed || generation !== this.generation) return;
       this.pause();
@@ -300,6 +265,52 @@ export class ChartTransport {
         this.failMusic(false);
       else this.options.onError(error);
     }
+  }
+
+  private async prepareMusic(resume: Promise<void>, generation: number) {
+    this.state = "buffering";
+    this.preparing = true;
+    this.startingMedia = true;
+    this.musicGain!.gain.value = 0;
+    // Prime the fallback from the gesture too; decoded playback does not depend on its success.
+    void this.media.play().catch(() => {});
+    this.emit();
+    this.musicLoading ??= prepareBufferedMusic(
+      this.media,
+      this.context!,
+      this.requests.signal,
+      this.renewMusic,
+    );
+    const [buffered] = await audioReady(
+      Promise.all([this.musicLoading, resume, this.tapLoading]),
+      this.requests.signal,
+    );
+    if (this.disposed || generation !== this.generation) return;
+    this.buffered = buffered;
+    this.preparing = false;
+    this.media.pause();
+    this.startingMedia = false;
+    this.musicGain!.gain.value = this.musicVolume;
+    this.unlocked = true;
+  }
+
+  private startPlayback(generation: number) {
+    this.anchor(this.anchorPosition);
+    this.queue.reset(this.anchorPosition);
+    this.state = "playing";
+    if (this.usesBuffer) {
+      this.anchorTime += 0.05;
+      this.startBuffer();
+    } else if (
+      !this.musicUnavailable &&
+      this.anchorPosition >= this.options.timing.audioStart &&
+      this.anchorPosition < this.musicEnd()
+    ) {
+      this.startMusic(this.anchorPosition, generation);
+    }
+    this.timer ??= setInterval(this.pump, 25);
+    this.pump();
+    this.emit();
   }
 
   private startBuffer() {
