@@ -9,8 +9,9 @@ bun add @pgko.dev/env valibot
 ```
 
 ```ts
-import { ClientEnvironmentSchema } from "@pgko.dev/env/client";
 import * as v from "valibot";
+
+import { ClientEnvironmentSchema } from "@pgko.dev/env/client";
 
 const environment = v.parse(ClientEnvironmentSchema, {
   PUBLIC_API_URL: "https://api.pgko.dev",
