@@ -131,9 +131,9 @@ export function TagSuggestionInput({
           </AutocompleteList>
           <div ref={sentinelRef} className="h-px" />
           {(isFetching || waiting) && (
-            <div role="status" aria-label={t("ui.loading")} className="flex justify-center py-2">
+            <output aria-label={t("ui.loading")} className="flex justify-center py-2">
               <Spinner className="size-4 text-muted-foreground" />
-            </div>
+            </output>
           )}
           {!isFetching && !waiting && suggestions.isError && (
             <Button
@@ -152,9 +152,9 @@ export function TagSuggestionInput({
             </Button>
           )}
           {!isFetching && !waiting && !suggestions.isError && !items.length && (
-            <p role="status" className="px-2 py-4 text-center text-sm text-muted-foreground">
+            <output className="block px-2 py-4 text-center text-sm text-muted-foreground">
               {t("ui.bundleList.filters.noSuggestions")}
-            </p>
+            </output>
           )}
         </ScrollAreaViewport>
         <ScrollBar />

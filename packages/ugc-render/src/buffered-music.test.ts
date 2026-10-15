@@ -51,6 +51,28 @@ test("download errors renew a signed URL once before decoding", async () => {
   expect(urls).toEqual(["https://example.test/music", "https://example.test/renewed"]);
 });
 
+test("a failed renewed download falls back without another renewal", async () => {
+  let downloads = 0;
+  let renewals = 0;
+  globalThis.fetch = (async () => {
+    downloads++;
+    return new Response(null, { status: 403 });
+  }) as unknown as typeof fetch;
+
+  const result = await prepare(
+    new Media(),
+    async () => pcm,
+    async () => {
+      renewals++;
+      return true;
+    },
+  );
+
+  expect(result).toEqual({ fallbackReason: "network" });
+  expect(downloads).toBe(2);
+  expect(renewals).toBe(1);
+});
+
 test("bounded downloads reject both declared and streamed oversized responses", async () => {
   for (const declared of [true, false]) {
     globalThis.fetch = (async () =>

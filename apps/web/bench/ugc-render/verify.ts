@@ -14,6 +14,7 @@ import { benchmarkSources } from "./fixtures.js";
 
 export async function referenceRenderer() {
   const url = new URL("/reference.js", location.href).href;
+  // react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- The benchmark server provides a separate renderer built from the selected Git revision at this runtime URL.
   return (await import(url)) as typeof import("../../../../packages/ugc-render/src/renderer.js");
 }
 
