@@ -359,6 +359,8 @@ test("card scrollbar keeps dragging outside the popover and releases normally", 
   const thumb = card.locator('[data-slot="scroll-area-thumb"]');
   await expect(thumb).toBeVisible();
   await expect(card.locator("[inert]")).toHaveCount(0);
+  // Wait for the opening animation to expose the thumb to pointer hit testing.
+  await thumb.hover();
   const trackBounds = (await card.locator('[data-slot="scroll-area"]').boundingBox())!;
   const thumbBounds = (await thumb.boundingBox())!;
   expect(trackBounds.x + trackBounds.width - thumbBounds.x - thumbBounds.width).toBeCloseTo(2);
