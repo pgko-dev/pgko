@@ -169,7 +169,7 @@ export const ui = {
       change: "更换",
       delete: "移除",
       deleteConfirm: "确定要移除头像吗？",
-      hint: "支持 PNG、JPG 或 WebP\n最大 {{size}}（裁剪后）",
+      hint: "支持 PNG、JPG 或 WebP\n最大 {{size}}",
     },
     profileSection: {
       title: "个人资料",

@@ -171,7 +171,7 @@ export const ui = {
       change: "변경",
       delete: "제거",
       deleteConfirm: "프로필 사진을 제거할까요?",
-      hint: "PNG, JPG 또는 WebP.\n최대 {{size}} (자르기 후)",
+      hint: "PNG, JPG 또는 WebP.\n최대 {{size}}",
     },
     profileSection: {
       title: "프로필",

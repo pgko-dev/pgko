@@ -170,7 +170,7 @@ export const ui = {
       change: "変更",
       delete: "削除",
       deleteConfirm: "プロフィール写真を削除しますか？",
-      hint: "PNG、JPG、WebP\n最大 {{size}}（トリミング後）",
+      hint: "PNG、JPG、WebP\n最大 {{size}}",
     },
     profileSection: {
       title: "プロフィール",

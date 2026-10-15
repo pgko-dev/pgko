@@ -172,7 +172,7 @@ export const ui = {
       change: "Change",
       delete: "Remove",
       deleteConfirm: "Are you sure you want to remove your profile photo?",
-      hint: "PNG, JPG or WebP.\nMax {{size}} (after crop).",
+      hint: "PNG, JPG or WebP.\nMax {{size}}.",
     },
     profileSection: {
       title: "Profile",
