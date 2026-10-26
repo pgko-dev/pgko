@@ -53,7 +53,7 @@
     "@fontsource-variable/noto-sans-tc": "^5.3.1",
     "@mantine/hooks": "^9.7.3",
     "@mdx-js/rollup": "^3.1.1",
-    "@scalar/api-reference": "1.75.1",
+    "@scalar/api-reference": "1.76.0",
     "@sentry/react": "^11.8.0",
     "@sentry/vite-plugin": "^11.8.0",
     "@tailwindcss/vite": "^4.3.3",
