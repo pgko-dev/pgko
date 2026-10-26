@@ -55,7 +55,7 @@
     "@mdx-js/rollup": "^3.1.1",
     "@scalar/api-reference": "1.75.1",
     "@sentry/react": "^11.8.0",
-    "@sentry/vite-plugin": "^11.8.0",
+    "@sentry/vite-plugin": "^11.9.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/devtools-vite": "^0.8.5",
     "@tanstack/eslint-plugin-query": "^5.104.5",
