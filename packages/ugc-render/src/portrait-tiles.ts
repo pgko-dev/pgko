@@ -79,6 +79,7 @@ export class PortraitTiles {
       const endTick = Math.min(view.layout.endTick, -top / view.pixelsPerTick);
       if (endTick >= startTick) {
         const column: PreviewColumn = {
+          ...view.layout.columns[0],
           index: 0,
           startTick,
           packedEndTick: endTick,

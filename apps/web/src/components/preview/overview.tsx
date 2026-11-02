@@ -2,12 +2,15 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 
 import {
   CANVAS_HEIGHT,
-  COLUMN_WIDTH,
   FIELD_LEFT,
-  FIELD_WIDTH,
   LOOK_AHEAD,
   NOTE_PADDING,
   columnAtTick,
+  columnAtX,
+  columnField,
+  columnOffset,
+  columnWidth,
+  layoutWidth,
   createLayout,
   hitTestTick,
   tickY,
@@ -43,7 +46,7 @@ const OverviewColumn = memo(function OverviewColumn({
   options: ChartRenderOptions;
 }>) {
   const surface = useRef<HTMLCanvasElement>(null);
-  const width = COLUMN_WIDTH * scale;
+  const width = columnWidth(column) * scale;
 
   useLayoutEffect(() => {
     const canvas = surface.current!;
@@ -67,7 +70,7 @@ const OverviewColumn = memo(function OverviewColumn({
       ref={surface}
       aria-hidden="true"
       data-column={column.index}
-      style={{ position: "absolute", left: column.index * width, width, height }}
+      style={{ position: "absolute", left: columnOffset(column) * scale, width, height }}
     />
   );
 });
@@ -104,20 +107,20 @@ export function OverviewViewport({
     [chart, zoom, window.height, scale],
   );
   const painter = useMemo(() => new ChartPainter(chart, layout), [chart, layout]);
-  const columnWidth = COLUMN_WIDTH * scale;
-  const left = Math.min(
-    window.left,
-    Math.max(0, layout.columns.length * columnWidth - window.width),
+  const width = layoutWidth(layout) * scale;
+  const left = Math.min(window.left, Math.max(0, width - window.width));
+  const first = Math.max(0, columnAtX(layout, left / scale).index - 1);
+  const last = Math.min(
+    layout.columns.length - 1,
+    columnAtX(layout, (left + window.width) / scale).index + 1,
   );
-  const first = Math.max(0, Math.floor(left / columnWidth) - 1);
-  const last = Math.min(layout.columns.length - 1, Math.ceil((left + window.width) / columnWidth));
+  const visibleWidth = layout.columns
+    .slice(first, last + 1)
+    .reduce((total, column) => total + columnWidth(column), 0);
   const ratio = Math.min(
     usePixelRatio(),
     2,
-    Math.sqrt(
-      MAX_SURFACE_BYTES /
-        ((last - first + 1) * COLUMN_WIDTH * layout.canvasHeight * scale * scale * 4),
-    ),
+    Math.sqrt(MAX_SURFACE_BYTES / (visibleWidth * layout.canvasHeight * scale * scale * 4)),
   );
 
   useEffect(() => {
@@ -159,7 +162,8 @@ export function OverviewViewport({
       const active = columnAtTick(layout, currentTick);
       const marker = cursor.current!;
       marker.style.display = currentTick >= 0 && currentTick <= layout.endTick ? "" : "none";
-      marker.style.left = `${(active.index * COLUMN_WIDTH + FIELD_LEFT) * scale}px`;
+      marker.style.left = `${(columnOffset(active) + FIELD_LEFT) * scale}px`;
+      marker.style.width = `${columnField(active).width * scale}px`;
       marker.style.top = `${tickY(active, currentTick) * scale - 0.5}px`;
       if (!playing) return;
       const element = scroll.current!;
@@ -168,15 +172,19 @@ export function OverviewViewport({
         Math.min(1, (currentTick - active.startTick) / (active.packedEndTick - active.startTick)),
       );
       // Center the cursor's sweep around the playback focus while scrolling linearly.
-      const cursorCenter = (FIELD_LEFT + FIELD_WIDTH / 2) * scale;
-      const focusOffset = element.clientWidth * PLAYBACK_FOCUS - cursorCenter + columnWidth / 2;
-      const targetLeft = Math.max(0, (active.index + progress) * columnWidth - focusOffset);
+      const cursorCenter = (FIELD_LEFT + columnField(active).width / 2) * scale;
+      const activeWidth = columnWidth(active) * scale;
+      const focusOffset = element.clientWidth * PLAYBACK_FOCUS - cursorCenter + activeWidth / 2;
+      const targetLeft = Math.max(
+        0,
+        columnOffset(active) * scale + progress * activeWidth - focusOffset,
+      );
 
       if (targetLeft !== element.scrollLeft) {
         element.scrollTo({ left: targetLeft, behavior: "instant" });
       }
     },
-    [layout, playing, columnWidth, scale],
+    [layout, playing, scale],
   );
   usePlaybackFrame(playing, tick, readTick, draw);
 
@@ -203,9 +211,10 @@ export function OverviewViewport({
             const width = element.clientWidth;
             if (
               width === previous.width &&
-              Math.floor(nextLeft / columnWidth) === Math.floor(previous.left / columnWidth) &&
-              Math.ceil((nextLeft + width) / columnWidth) ===
-                Math.ceil((previous.left + width) / columnWidth)
+              columnAtX(layout, nextLeft / scale).index ===
+                columnAtX(layout, previous.left / scale).index &&
+              columnAtX(layout, (nextLeft + width) / scale).index ===
+                columnAtX(layout, (previous.left + width) / scale).index
             ) {
               return previous;
             }
@@ -246,9 +255,8 @@ export function OverviewViewport({
           const bounds = tiles.current!.getBoundingClientRect();
           const x = (event.clientX - bounds.left) / scale;
           const y = (event.clientY - bounds.top) / scale;
-          const column = layout.columns[Math.floor(x / COLUMN_WIDTH)];
-          if (!column) return;
-          const target = hitTestTick(column, x - column.index * COLUMN_WIDTH, y);
+          const column = columnAtX(layout, x);
+          const target = hitTestTick(column, x - columnOffset(column), y);
           if (target !== null) onSeek(target);
         }}
       >
@@ -257,7 +265,7 @@ export function OverviewViewport({
           data-slot="preview-columns"
           style={{
             position: "relative",
-            width: layout.columns.length * columnWidth,
+            width,
             height: layout.canvasHeight * scale,
           }}
         >
@@ -283,7 +291,7 @@ export function OverviewViewport({
               zIndex: 1,
               height: 1,
               background: "#ff0000",
-              width: FIELD_WIDTH * scale,
+              width: columnField(layout.columns[0]).width * scale,
             }}
           />
         </div>

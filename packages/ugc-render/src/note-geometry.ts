@@ -26,6 +26,7 @@ export class NoteGeometry {
 
   constructor(note: ChartNote) {
     this.points = [note, ...note.children];
+    if (note.kind === "slide" && note.noLine) return;
     if (note.kind !== "slide") {
       if (note.children.length) this.runs.push({ first: 0, last: note.children.length });
       return;

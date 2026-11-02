@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   CANVAS_HEIGHT,
   FIELD_LEFT,
-  FIELD_WIDTH,
+  columnField,
   createPortraitLayout,
   hitTestTick,
   portraitColumn,
@@ -190,7 +190,7 @@ export function PortraitViewport({
                 height: 1,
                 background: "#ff0000",
                 left: view.offsetX + FIELD_LEFT * view.scale,
-                width: FIELD_WIDTH * view.scale,
+                width: columnField(view.layout.columns[0]).width * view.scale,
               }}
             />
           </div>

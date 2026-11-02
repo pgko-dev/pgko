@@ -1,4 +1,4 @@
-// Format reference: inonote's published Umiguri Chart v8 specification.
+// Format reference: inonote's published Umiguri Chart v8/v9 specification.
 // https://gist.github.com/inonote/5c01e73781cab17765a1d93641d52298
 import type {
   ChartDiagnostic,
@@ -61,10 +61,20 @@ const HEADER_ONLY = new Set([
   "ENDHEAD",
   "BEAT",
 ]);
-const KNOWN_FLAGS = new Set(["SOFFSET", "CLICK", "DIFFTTL", "EXLONG", "BGMWCMP", "HIPRECISION"]);
+const KNOWN_FLAGS = new Set([
+  "SOFFSET",
+  "CLICK",
+  "DIFFTTL",
+  "TUTORIAL",
+  "EXLONG",
+  "BGMWCMP",
+  "HIPRECISION",
+  "EXFIELD",
+]);
 const AIR_DIRECTIONS = new Set(["UC", "UL", "UR", "DC", "DL", "DR"]);
 const CRUSH_COLORS = new Set("0123456789AYBCDZ");
 const BASE36_DIGIT = /^[0-9a-z]$/i;
+const BASE62_DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const SOURCE_POSITION = /^(\d+)'(\d+)$/;
 const NOTE_RECORD = /^#([^:>]+)([:>])(.+)$/;
 const LEGACY_CURVE = /^(?:b|B|curve|bezier)/;
@@ -82,6 +92,7 @@ class ChartReader {
   private mainBpm?: number;
   private exLong = false;
   private extendedVersion = false;
+  private highPrecision?: boolean;
   private readonly omitted = new Set<ChartNote>();
   private readonly barStarts: { bar: number; tick: number; duration: number }[] = [];
 
@@ -101,6 +112,7 @@ class ChartReader {
         bgmOffset: 0,
         startOffset: false,
         mainTimeline: 0,
+        extendedField: false,
       },
       tempos: [],
       meters: [],
@@ -217,15 +229,20 @@ class ChartReader {
         chart.metadata.mainTimeline = this.number(values[0], row, "timeline", 0, true);
         break;
       case "FLAG": {
-        const [name, value] = values;
+        const name = values[0]?.trim().toUpperCase();
+        const value = values[1]?.trim().toUpperCase();
+        const enabled = value === "TRUE" || value === "1" || value === "YES";
+        const disabled = value === "FALSE" || value === "0" || value === "NO";
         this.require(
-          value === "TRUE" || value === "FALSE",
+          enabled || disabled,
           row,
           "flag",
-          "Expected TRUE or FALSE for a flag.",
+          "Expected TRUE/FALSE, 1/0 or YES/NO for a flag.",
         );
-        if (name === "SOFFSET") chart.metadata.startOffset = value === "TRUE";
-        if (name === "EXLONG") this.exLong = value === "TRUE";
+        if (name === "SOFFSET") chart.metadata.startOffset = enabled;
+        if (name === "EXLONG") this.exLong = enabled;
+        if (name === "HIPRECISION") this.highPrecision = enabled;
+        if (name === "EXFIELD") chart.metadata.extendedField = enabled;
         if (!KNOWN_FLAGS.has(name))
           this.report("warning", "flag", row.line, `Unsupported flag ${name}.`);
         break;
@@ -235,17 +252,31 @@ class ChartReader {
 
   private point(row: Row, payload: string, tick: number, parent?: ChartNote): ChartPoint {
     const inherited =
-      payload.length === 1 && parent && (parent.kind === "hold" || parent.kind === "airHold");
-    const lane = inherited ? parent.lane : Number.parseInt(payload[1], 36);
+      payload.length === 1 &&
+      parent &&
+      (parent.kind === "hold" || parent.kind === "airHold" || parent.kind === "airSlide");
+    const version9 = this.chart.version === 9;
+    const laneDigit = version9
+      ? BASE62_DIGITS.indexOf(payload[1] ?? " ")
+      : Number.parseInt(payload[1], 36);
+    const lane = inherited ? parent.lane : laneDigit - (version9 ? 16 : 0);
     const width = inherited ? parent.width : Number.parseInt(payload[2], 36);
     this.require(
       Boolean(inherited) ||
-        (BASE36_DIGIT.test(payload[1] ?? "") && BASE36_DIGIT.test(payload[2] ?? "")),
+        ((version9 ? laneDigit >= 0 : BASE36_DIGIT.test(payload[1] ?? "")) &&
+          BASE36_DIGIT.test(payload[2] ?? "")),
       row,
       "geometry",
-      "Expected base-36 lane and width.",
+      version9 ? "Expected a base-62 lane and base-36 width." : "Expected base-36 lane and width.",
     );
-    this.require(width > 0, row, "geometry", "Note width must be positive.");
+    const clippedControl =
+      version9 && payload[0] === "c" && (parent?.kind === "slide" || parent?.kind === "airSlide");
+    this.require(
+      width > 0 || (width === 0 && clippedControl),
+      row,
+      "geometry",
+      "Note width must be positive except at clipped controls.",
+    );
 
     return {
       id: `line:${row.line}`,
@@ -255,18 +286,25 @@ class ChartReader {
       width,
       height: parent?.height ?? 80,
       action: payload.startsWith("s"),
-      noLine: false,
+      noLine: parent?.kind === "slide" && Boolean(parent.noLine),
     };
   }
 
-  private airHeight(row: Row, payload: string) {
+  private heightDigits(payload: string, trailing = 0) {
+    if (this.highPrecision !== undefined) return this.highPrecision ? 2 : 1;
+    // Older exports sometimes omit HIPRECISION while retaining two-digit heights.
+    return this.chart.version === 8 && payload.length >= 5 + trailing ? 2 : 1;
+  }
+
+  private airHeight(row: Row, payload: string, digits = this.heightDigits(payload)) {
+    const raw = payload.slice(3, 3 + digits);
     this.require(
-      /^[0-9a-z]{2}$/i.test(payload.slice(3, 5)),
+      raw.length === digits && /^[0-9a-z]+$/i.test(raw),
       row,
       "height",
-      "Expected two base-36 air-height digits.",
+      `Expected ${digits} base-36 air-height digit(s).`,
     );
-    return Number.parseInt(payload.slice(3, 5), 36);
+    return Number.parseInt(raw, 36) * (digits === 1 ? 10 : 1);
   }
 
   private note(
@@ -314,18 +352,36 @@ class ChartReader {
       this.require(AIR_DIRECTIONS.has(note.direction), row, "direction", "Unknown air direction.");
     } else if (kind === "airHold") {
       // Editors also write AIR-HOLD with AIR-SLIDE's explicit height fields.
-      const hasHeight = payload.length >= 6;
-      expectedLength = hasHeight ? 6 : 4;
-      if (hasHeight) note.height = this.airHeight(row, payload);
+      const hasHeight = payload.length >= 5;
+      const digits = this.heightDigits(payload, 1);
+      expectedLength = hasHeight ? 4 + digits : 4;
+      if (hasHeight) note.height = this.airHeight(row, payload, digits);
       note.color = payload[expectedLength - 1];
     } else if (kind === "airSlide" || kind === "airCrush") {
-      expectedLength = 6;
-      note.height = this.airHeight(row, payload);
-      note.color = payload[5];
+      const digits = this.heightDigits(payload, 1);
+      expectedLength = 4 + digits;
+      note.height = this.airHeight(row, payload, digits);
+      note.color = payload[3 + digits];
       if (kind === "airCrush") {
         note.interval =
           suffix === "$" ? null : this.number(suffix, row, "attack interval", 0, true);
+        if (this.chart.version === 9) {
+          const axis = payload[expectedLength] ?? "N";
+          this.require(
+            axis === "N" || axis === "Y" || axis === "Z",
+            row,
+            "axis",
+            "Unknown air-crush axis.",
+          );
+          note.axis = axis;
+          expectedLength++;
+        }
       }
+    } else if (kind === "slide" && this.chart.version === 9) {
+      expectedLength = 4;
+      const color = payload[3] ?? "0";
+      this.require(color === "0" || color === "Z", row, "color", "Unknown slide line color.");
+      note.noLine = color === "Z";
     } else if (kind === "exTap" || kind === "flick") {
       expectedLength = 4;
       note.effect = payload[3] ?? "A";
@@ -466,7 +522,7 @@ class ChartReader {
     );
     const child = this.point(row, payload, tick, owner);
     if (
-      owner.kind === "airSlide" ||
+      (owner.kind === "airSlide" && payload.length > 3) ||
       owner.kind === "airCrush" ||
       (owner.kind === "airHold" && payload.length > 3)
     )
@@ -584,8 +640,12 @@ class ChartReader {
       if (row.text.startsWith("@")) this.inspect(row, () => this.header(row));
     }
     this.exLong ||= this.extendedVersion;
-    if (this.chart.version !== 8)
-      this.report("warning", "version", 0, "This reader targets UGC version 8.");
+    if (this.chart.version > 9) {
+      this.report("error", "version", 0, "This reader supports UGC up to version 9.");
+      return { chart: null, diagnostics: this.diagnostics };
+    }
+    if (this.chart.version !== 8 && this.chart.version !== 9)
+      this.report("warning", "version", 0, "This reader targets UGC versions 8 and 9.");
 
     this.indexBars();
     this.eventsAndNotes();

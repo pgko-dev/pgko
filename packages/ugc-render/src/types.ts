@@ -41,6 +41,8 @@ export type ChartNote = ChartPoint & {
   ex: boolean;
   /** 0 = trace, null = head only, otherwise source ticks between attacks. */
   interval: number | null;
+  /** AIR-CRUSH line axis; N is the default X axis. */
+  axis?: "N" | "Y" | "Z";
 };
 
 export type TempoEvent = { tick: number; bpm: number; line: number };
@@ -60,6 +62,7 @@ export type UgcChart = {
     bgmOffset: number;
     startOffset: boolean;
     mainTimeline: number;
+    extendedField?: boolean;
   };
   tempos: TempoEvent[];
   meters: MeterEvent[];

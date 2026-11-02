@@ -5,12 +5,15 @@ import { expect, test, type Page } from "@playwright/test";
 
 import {
   COLUMN_WIDTH,
+  columnWidth,
   FIELD_HEIGHT,
   FIELD_LEFT,
   FIELD_WIDTH,
   NOTE_PADDING,
   createLayout,
+  createPortraitLayout,
   parseUgcChart,
+  portraitScrollTop,
   tickY,
 } from "@pgko.dev/ugc-render";
 
@@ -127,7 +130,7 @@ async function pixels(page: Page, x: number, y: number, width = 1, height = 1, c
   return canvas(page, column).evaluate(
     (element, region) => {
       const surface = element as HTMLCanvasElement;
-      const ratio = surface.width / region.columnWidth;
+      const ratio = surface.width / (surface.getBoundingClientRect().width / 0.5);
       return Array.from(
         surface
           .getContext("2d")!
@@ -139,7 +142,7 @@ async function pixels(page: Page, x: number, y: number, width = 1, height = 1, c
           ).data,
       );
     },
-    { x, y, width, height, columnWidth: COLUMN_WIDTH },
+    { x, y, width, height },
   );
 }
 
@@ -149,6 +152,87 @@ async function labels(page: Page) {
       (window as unknown as TextCapture).previewText.get(element as HTMLCanvasElement) ?? [],
   );
 }
+
+test("v9 expands occupied columns, paints both outer edges and seeks within them", async ({
+  page,
+}, info) => {
+  const source = [
+    "@VER\t9",
+    "@BPM\t0'0\t120",
+    "@FLAG\tEXFIELD\tTRUE",
+    "#0'240:tG4",
+    "#5'240:t04",
+    "#5'480:tl1",
+    "#9'0:tG4",
+  ].join("\n");
+  const chart = parseUgcChart(new TextEncoder().encode(source)).chart!;
+  const layout = createLayout(chart);
+  await open(page, source);
+  await expect(page.getByText(/Preview diagnostics/)).toHaveCount(0);
+  const widths = await page
+    .locator("canvas[data-column]")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => (node as HTMLCanvasElement).getBoundingClientRect().width),
+    );
+  expect(widths.slice(0, 2)).toEqual(
+    layout.columns.slice(0, 2).map((column) => columnWidth(column) * 0.5),
+  );
+  for (const [x, tick, width] of [
+    [FIELD_LEFT + 1, 2160, 78],
+    [FIELD_LEFT + 941, 2400, 18],
+  ]) {
+    const data = await pixels(page, x, noteY(tick) - 3, width, 6, 1);
+    expect(data.some((value, index) => index % 4 === 0 && value > data[index + 1] + 40)).toBe(true);
+  }
+  await captureCanvas(page, info.outputPath("extended-column.png"), 1);
+  const field = page.getByRole("region", { name: /Beatmap columns/ });
+  await field.click({
+    position: { x: COLUMN_WIDTH * 0.5 + (FIELD_LEFT + 10) * 0.5, y: noteY(2160) * 0.5 },
+  });
+  expect(
+    Number(await page.getByRole("slider", { name: "Playback position" }).inputValue()),
+  ).toBeGreaterThan(0);
+  await expect(page.locator('[data-slot="preview-cursor"]')).toHaveCSS("width", "480px");
+  await setPortrait(page, true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const size = await field.evaluate((element) => ({
+    width: element.clientWidth,
+    height: element.clientHeight,
+  }));
+  const view = createPortraitLayout(chart, 0.5, size.width, size.height);
+  const anchor = 5 * 1920;
+  await field.evaluate(
+    (element, top) => {
+      element.scrollTop = top;
+    },
+    portraitScrollTop(view, anchor),
+  );
+  const regions = chart.notes.slice(1, 3).map((note) => ({
+    x: view.offsetX + (FIELD_LEFT + (note.lane + 16) * 20) * view.scale,
+    y: size.height - 48 - (note.tick - anchor) * view.pixelsPerTick,
+    width: note.width * 20 * view.scale,
+  }));
+  await expect
+    .poll(() =>
+      field.locator("canvas").evaluate((element, regions) => {
+        const canvas = element as HTMLCanvasElement;
+        const ratio = canvas.width / canvas.getBoundingClientRect().width;
+        return regions.map(({ x, y, width }) => {
+          const data = canvas
+            .getContext("2d")!
+            .getImageData(
+              Math.floor(x * ratio),
+              Math.floor((y - 2) * ratio),
+              Math.ceil(width * ratio),
+              Math.ceil(4 * ratio),
+            ).data;
+          return data.some((value, index) => index % 4 === 0 && value > data[index + 1] + 20);
+        });
+      }, regions),
+    )
+    .toEqual([true, true]);
+  await field.screenshot({ path: info.outputPath("extended-portrait.png") });
+});
 
 test("air-crush traces use the Margrete palette in UGC color order", async ({ page }, info) => {
   // UGC uses Y for purple, B for pink, C for white and D for black.
