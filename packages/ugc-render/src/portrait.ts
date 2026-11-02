@@ -1,4 +1,5 @@
 import { measureBars } from "./bars.js";
+import { measureField } from "./field.js";
 import { FIELD_LEFT, FIELD_WIDTH, type ChartLayout, type PreviewColumn } from "./layout.js";
 import type { UgcChart } from "./types.js";
 
@@ -31,8 +32,14 @@ export function createPortraitLayout(
   const bars = measureBars(chart);
   const endTick = bars.at(-1)!.endTick;
   const availableWidth = Math.max(1, width - 16);
-  const fieldWidth = Math.min(availableWidth, Math.max(100, Math.min(availableWidth, 400) - 128));
-  const scale = fieldWidth / FIELD_WIDTH;
+  const field = measureField(chart.notes);
+  const logicalWidth = ((field.maxLane - field.minLane) * FIELD_WIDTH) / 16;
+  const normalWidth = Math.min(availableWidth, Math.max(100, Math.min(availableWidth, 400) - 128));
+  const fieldWidth = Math.min(
+    Math.max(normalWidth, availableWidth - 128),
+    (normalWidth * logicalWidth) / FIELD_WIDTH,
+  );
+  const scale = fieldWidth / logicalWidth;
   const offsetX = (availableWidth - fieldWidth) / 2 - FIELD_LEFT * scale;
   // MargreteOnline's default: 480 ticks per quarter, at 0.1 screen pixels per tick.
   const pixelsPerTick = (96 * zoom) / chart.ticksPerQuarter;
@@ -43,6 +50,8 @@ export function createPortraitLayout(
     lookAheadEndTick: endTick,
     pixelsPerTick: pixelsPerTick / scale,
     bottomY: (height - BOTTOM_MARGIN) / scale,
+    field,
+    offsetX: 0,
   };
   return {
     layout: { bars, columns: [column], endTick, canvasHeight: height / scale },
@@ -68,6 +77,7 @@ export function portraitColumn(view: PortraitLayout, scrollTop: number): Preview
   const startTick = Math.max(0, (bottomY - height) / pixelsPerTick);
   const endTick = Math.min(layout.endTick, bottomY / pixelsPerTick);
   return {
+    ...layout.columns[0],
     index: 0,
     startTick,
     packedEndTick: endTick,

@@ -1,8 +1,11 @@
 import {
-  COLUMN_WIDTH,
   FIELD_LEFT,
   FIELD_WIDTH,
   NOTE_PADDING,
+  NOTE_BOTTOM_PADDING,
+  columnField,
+  columnWidth,
+  columnNoteWindow,
   tickY,
   type ChartLayout,
   type PreviewColumn,
@@ -17,7 +20,6 @@ const laneX = (lane: number) => FIELD_LEFT + (lane * FIELD_WIDTH) / 16;
 type Context = CanvasRenderingContext2D;
 type Vertex = readonly [number, number];
 const LABEL_SIZE = 10;
-const NOTE_BOTTOM_PADDING = 12;
 const AIR_LONG_KINDS = ["airHold", "airSlide", "airCrush"] as const;
 const SLIDE_GRADIENT = theme.slideGradient.toReversed();
 type TickWindow = { start: number; end: number };
@@ -95,6 +97,7 @@ function tap(
   paired: boolean,
   child = false,
 ) {
+  if (point.width <= 0) return;
   const width = (point.width * FIELD_WIDTH) / 16;
   const left = laneX(point.lane);
 
@@ -146,10 +149,16 @@ function ribbon(
 ) {
   if (points.length < 2) return;
   const vertices: Vertex[] = [
-    ...points.map((point): Vertex => [laneX(point.lane) + 1.5, y(point.tick)]),
+    ...points.map((point): Vertex => [
+      laneX(point.lane) + Math.min(1.5, point.width * 10),
+      y(point.tick),
+    ]),
     ...points
       .toReversed()
-      .map((point): Vertex => [laneX(point.lane + point.width) - 1.5, y(point.tick)]),
+      .map((point): Vertex => [
+        laneX(point.lane + point.width) - Math.min(1.5, point.width * 10),
+        y(point.tick),
+      ]),
   ];
   polygon(context, vertices);
   if (colors.length === 1) context.fillStyle = colors[0];
@@ -249,6 +258,7 @@ export function interpolatePoint(note: ChartNote, tick: number): ChartPoint {
 }
 
 function action(context: Context, point: ChartPoint, y: number, color: string, emphasized = false) {
+  if (point.width <= 0) return;
   const x = laneX(point.lane);
   const width = (point.width * FIELD_WIDTH) / 16;
   if (point.action) {
@@ -297,16 +307,22 @@ export class ChartPainter {
 
   private grid(context: Context, column: PreviewColumn) {
     const { pixelsPerTick } = column;
+    const field = columnField(column);
+    const left = laneX(field.minLane);
+    const right = laneX(field.maxLane);
     const y = (tick: number) => tickY(column, tick);
     const start = column.startTick;
     const end = column.lookAheadEndTick;
     context.fillStyle = theme.background;
-    context.fillRect(0, 0, COLUMN_WIDTH, this.layout.canvasHeight);
+    context.fillRect(-field.shiftX, 0, columnWidth(column), this.layout.canvasHeight);
     // Notes can occupy the headroom above look-ahead; continue the field behind them.
     const top = y(end) - NOTE_PADDING;
     const gridEnd = end + NOTE_PADDING / pixelsPerTick;
     const bottom = y(start);
-    for (let lane = 0; lane <= 16; lane++)
+    context.fillStyle = "#181818";
+    if (field.minLane < 0) context.fillRect(left, top, FIELD_LEFT - left, bottom - top);
+    if (field.maxLane > 16) context.fillRect(laneX(16), top, right - laneX(16), bottom - top);
+    for (let lane = field.minLane; lane <= field.maxLane; lane++)
       line(
         context,
         laneX(lane),
@@ -321,9 +337,9 @@ export class ChartPainter {
     for (let tick = Math.ceil(start / gridStep) * gridStep; tick <= gridEnd; tick += gridStep) {
       line(
         context,
-        FIELD_LEFT,
+        left,
         y(tick),
-        FIELD_LEFT + FIELD_WIDTH,
+        right,
         y(tick),
         tick % this.chart.ticksPerQuarter === 0 ? theme.beat : theme.subdivision,
       );
@@ -331,21 +347,15 @@ export class ChartPainter {
     context.textBaseline = "middle";
     for (const bar of this.layout.bars) {
       if (bar.startTick < start || bar.startTick > end) continue;
-      line(
-        context,
-        FIELD_LEFT,
-        y(bar.startTick),
-        FIELD_LEFT + FIELD_WIDTH,
-        y(bar.startTick),
-        theme.measure,
-      );
+      line(context, left, y(bar.startTick), right, y(bar.startTick), theme.measure);
       context.fillStyle = theme.measure;
       context.textAlign = "right";
-      context.fillText(String(bar.index + 1), FIELD_LEFT - 6, y(bar.startTick), FIELD_LEFT - 8);
+      context.fillText(String(bar.index + 1), left - 6, y(bar.startTick), FIELD_LEFT - 8);
     }
   }
 
   private annotations(context: Context, column: PreviewColumn, scale: number) {
+    const field = columnField(column);
     const y = (tick: number) => tickY(column, tick);
     const start = column.startTick;
     const end = column.lookAheadEndTick;
@@ -353,14 +363,14 @@ export class ChartPainter {
     context.fillStyle = theme.airUp;
     for (const [tick, text] of this.tempoLabels) {
       if (tick < start || tick > end) continue;
-      context.fillText(text, FIELD_LEFT + FIELD_WIDTH + 6, y(tick), 90);
+      context.fillText(text, laneX(field.maxLane) + 6, y(tick), 90);
     }
     context.textAlign = "right";
     context.fillStyle = "#ffaa55";
     for (const { tick, text, bar } of this.beatLabels) {
       if (tick < start || tick > end) continue;
-      const right = FIELD_LEFT - 6 - context.measureText(bar).width - 6 / scale;
-      context.fillText(text, right, y(tick), Math.max(1, right - 4));
+      const right = laneX(field.minLane) - 6 - context.measureText(bar).width - 6 / scale;
+      context.fillText(text, right, y(tick), Math.max(1, right + field.shiftX - 4));
     }
   }
 
@@ -370,24 +380,21 @@ export class ChartPainter {
     scale: number,
     options: ChartRenderOptions,
   ) {
-    const { pixelsPerTick } = column;
     const y = (tick: number) => tickY(column, tick);
     const start = column.startTick;
     const end = column.lookAheadEndTick;
     const top = y(end);
     const bottom = y(start);
-    const notes = this.index.query(start - 3 / pixelsPerTick, end + 44 / pixelsPerTick);
     // Include the full clipping margin and marker extent before trimming geometry.
-    const window = {
-      start: start - (NOTE_BOTTOM_PADDING + 44) / pixelsPerTick,
-      end: end + (NOTE_PADDING + 44) / pixelsPerTick,
-    };
+    const window = columnNoteWindow(column);
+    const notes = this.index.query(window.start, window.end);
+    const field = columnField(column);
     context.save();
     context.beginPath();
     context.rect(
-      FIELD_LEFT,
+      laneX(field.minLane),
       top - NOTE_PADDING,
-      FIELD_WIDTH,
+      field.width,
       bottom - top + NOTE_PADDING + NOTE_BOTTOM_PADDING,
     );
     context.clip();
@@ -429,6 +436,9 @@ export class ChartPainter {
   }
 
   paint(context: Context, column: PreviewColumn, scale: number, options: ChartRenderOptions = {}) {
+    const field = columnField(column);
+    context.save();
+    context.translate(field.shiftX, 0);
     context.font = `${(options.labelSize ?? LABEL_SIZE) / scale}px system-ui`;
     this.grid(context, column);
     this.annotations(context, column, scale);
@@ -437,9 +447,10 @@ export class ChartPainter {
     if (column.index < this.layout.columns.length - 1) {
       context.save();
       context.setLineDash([4, 4]);
-      line(context, FIELD_LEFT, boundaryY, FIELD_LEFT + FIELD_WIDTH, boundaryY, "#888888");
+      line(context, laneX(field.minLane), boundaryY, laneX(field.maxLane), boundaryY, "#888888");
       context.restore();
     }
+    context.restore();
   }
 }
 

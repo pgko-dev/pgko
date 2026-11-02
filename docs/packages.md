@@ -91,6 +91,8 @@ Use `@pgko.dev/ugc-render` when a consumer needs full chart parsing or preview p
 
 `prepareChart` accepts beatmap bytes and returns diagnostics. A successful result includes the parsed chart, layout, and hit times; failure returns `chart: null`. Inspect the result before painting.
 
+The parser supports UGC v8 and v9.
+
 For interactive applications, use `prepareInWorker` with a dedicated worker whose message handler calls `prepareChart`. The adapter transfers the input buffer, so it detaches from the caller, and terminates its worker after completion or cancellation.
 
 Canvas and playback integrations require browser APIs. `ChartTransport` combines streaming music with Web Audio hit sounds; the application supplies audio URLs, event callbacks, and controls. React integration belongs in `apps/web`.

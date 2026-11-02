@@ -1,12 +1,16 @@
 import { measureBars, type ChartBar } from "./bars.js";
+import { measureField, type FieldBounds } from "./field.js";
+import { NoteIndex } from "./note-index.js";
 import type { UgcChart } from "./types.js";
 
 export type { ChartBar } from "./bars.js";
+export type { FieldBounds } from "./field.js";
 
 export const CONTENT_HEIGHT = 1024;
 export const LOOK_AHEAD = 24;
 export const FIELD_HEIGHT = CONTENT_HEIGHT + LOOK_AHEAD;
 export const NOTE_PADDING = 44;
+export const NOTE_BOTTOM_PADDING = 12;
 export const FIELD_LEFT = 128;
 export const FIELD_WIDTH = 320;
 export const COLUMN_WIDTH = FIELD_LEFT + FIELD_WIDTH + 100;
@@ -20,6 +24,8 @@ export type PreviewColumn = {
   lookAheadEndTick: number;
   pixelsPerTick: number;
   bottomY: number;
+  field?: FieldBounds;
+  offsetX?: number;
 };
 export type ChartLayout = {
   bars: ChartBar[];
@@ -61,11 +67,17 @@ export function createLayout(
       });
     }
   }
+  const index = new NoteIndex(chart.notes);
+  let offsetX = 0;
   for (const column of columns) {
     column.lookAheadEndTick = Math.min(
       endTick,
       column.packedEndTick + LOOK_AHEAD / column.pixelsPerTick,
     );
+    const window = columnNoteWindow(column);
+    column.field = measureField(index.query(window.start, window.end), window.start, window.end);
+    column.offsetX = offsetX;
+    offsetX += columnWidth(column);
   }
   return { bars, columns, endTick, canvasHeight };
 }
@@ -86,9 +98,51 @@ export function tickY(column: PreviewColumn, tick: number): number {
   return column.bottomY - (tick - column.startTick) * column.pixelsPerTick;
 }
 
+export function columnNoteWindow(column: PreviewColumn) {
+  return {
+    start: column.startTick - (NOTE_BOTTOM_PADDING + 44) / column.pixelsPerTick,
+    end: column.lookAheadEndTick + (NOTE_PADDING + 44) / column.pixelsPerTick,
+  };
+}
+
+export function columnField(column: PreviewColumn) {
+  const { minLane = 0, maxLane = 16 } = column.field ?? {};
+  return {
+    minLane,
+    maxLane,
+    width: ((maxLane - minLane) * FIELD_WIDTH) / 16,
+    shiftX: (-minLane * FIELD_WIDTH) / 16,
+  };
+}
+
+export function columnWidth(column: PreviewColumn): number {
+  return COLUMN_WIDTH - FIELD_WIDTH + columnField(column).width;
+}
+
+export function columnOffset(column: PreviewColumn): number {
+  return column.offsetX ?? column.index * COLUMN_WIDTH;
+}
+
+export function layoutWidth(layout: ChartLayout): number {
+  const last = layout.columns.at(-1);
+  return last ? columnOffset(last) + columnWidth(last) : 0;
+}
+
+/** Locate variable-width columns; their gutters are rejected by hitTestTick. */
+export function columnAtX(layout: ChartLayout, x: number): PreviewColumn {
+  let start = 0;
+  let end = layout.columns.length;
+  while (start < end) {
+    const index = (start + end) >>> 1;
+    if (columnOffset(layout.columns[index]) <= x) start = index + 1;
+    else end = index;
+  }
+  return layout.columns[Math.max(0, start - 1)];
+}
+
 /** Logical canvas coordinates. Gutters and unused space are not seek targets. */
 export function hitTestTick(column: PreviewColumn, x: number, y: number): number | null {
-  if (x < FIELD_LEFT || x > FIELD_LEFT + FIELD_WIDTH) return null;
+  if (x < FIELD_LEFT || x > FIELD_LEFT + columnField(column).width) return null;
   const tick = column.startTick + (column.bottomY - y) / column.pixelsPerTick;
   return tick >= column.startTick && tick <= column.lookAheadEndTick ? tick : null;
 }

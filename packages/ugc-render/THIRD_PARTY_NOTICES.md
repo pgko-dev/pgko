@@ -38,4 +38,4 @@ SOFTWARE.
 
 ## UGC specification
 
-Format reference: [Umiguri Chart v8 specification by inonote](https://gist.github.com/inonote/5c01e73781cab17765a1d93641d52298).
+Format reference: [Umiguri Chart v8/v9 specification by inonote](https://gist.github.com/inonote/5c01e73781cab17765a1d93641d52298).
