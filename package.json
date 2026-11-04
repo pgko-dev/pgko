@@ -80,7 +80,7 @@
     "cnfast": "^0.2.0",
     "dayjs": "^1.11.23",
     "get-user-locale": "^3.0.0",
-    "i18next": "^26.5.12",
+    "i18next": "^26.6.0",
     "input-otp": "^1.5.0",
     "lucide-react": "^1.65.0",
     "motion": "^14.9.0",
