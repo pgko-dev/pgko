@@ -11,7 +11,7 @@ bun run version:packages <version>
 bun run release:check
 ```
 
-The version script updates every public package, refreshes the lockfile, checks dependency and release metadata, and formats the workspace. Review and commit the changes, then push a matching `v<version>` tag.
+The version script updates every public package, refreshes the lockfile, checks release metadata, and formats the workspace. Review and commit the changes, then push a matching `v<version>` tag.
 
 `release:check` builds and tests packages and runs `pack:check`. The packed consumer checks inspect tarball contents, resolve local dependency protocols, load exports under Node and Bun, and check browser and Bun TypeScript consumers.
 

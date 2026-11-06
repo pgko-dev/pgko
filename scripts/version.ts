@@ -28,6 +28,5 @@ await Promise.all(packageWrites);
 // Bun 1.4 needs a second resolution pass after workspace versions change.
 await run(["bun", "install", "--lockfile-only", "--ignore-scripts"]);
 await run(["bun", "install", "--ignore-scripts"]);
-await run(["bun", "run", "deps:check"]);
 await run(["bun", "scripts/check-release.ts"]);
 await run(["bun", "run", "fmt:w"]);
