@@ -9,7 +9,7 @@ Applications live in `apps/*`; published packages live in `packages/*`. Install 
 External dependency versions belong in the root `package.json` catalog. Workspace manifests use `catalog:` for external packages and `workspace:*` for local packages. After dependency changes, run:
 
 ```sh
-bun run deps:sync
+bun install --ignore-scripts
 ```
 
 Runtime package exports point at `dist/`. The root `dev` and `dev:worker` scripts build shared packages first, watch them, and start the selected application. When running an application directly, build packages first:
@@ -17,8 +17,6 @@ Runtime package exports point at `dist/`. The root `dev` and `dev:worker` script
 ```sh
 bun run build:packages
 ```
-
-Consumers outside this workspace use packages from npm. Follow the [release process](releases.md) before updating their dependencies.
 
 ## Web
 
@@ -87,11 +85,11 @@ The import validates OpenAPI and rejects external schema references. Review the 
 
 Use the check that covers the change:
 
-| Command                               | Coverage                                                                                                   |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `bun run check`                       | Dependency policy, package build and release metadata, types, lint, formatting, unit tests, and app builds |
-| `bun run check:packages`              | Dependency policy, package builds, types, and package tests                                                |
-| `bun run --cwd apps/web test:browser` | Browser integration and chart preview behavior                                                             |
-| `bun run release:check`               | Package checks, formatting, lint, release metadata, and packed consumer checks                             |
+| Command                               | Coverage                                                                                |
+| ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `bun run check`                       | Package build and release metadata, types, lint, formatting, unit tests, and app builds |
+| `bun run check:packages`              | Package builds, types, and package tests                                                |
+| `bun run --cwd apps/web test:browser` | Browser integration and chart preview behavior                                          |
+| `bun run release:check`               | Package checks, formatting, lint, release metadata, and packed consumer checks          |
 
 See [package notes](packages.md), [releases](releases.md), and [deployment](deployment.md).
