@@ -18,8 +18,6 @@ Runtime package exports point at `dist/`. The root `dev` and `dev:worker` script
 bun run build:packages
 ```
 
-For npm consumers, follow the [release process](releases.md) before updating dependencies.
-
 ## Web
 
 Copy `apps/web/.env.development.example` to `apps/web/.env.development.local`. The frontend runs at `http://localhost:3001`.

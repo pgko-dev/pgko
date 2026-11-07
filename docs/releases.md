@@ -11,7 +11,7 @@ bun run version:packages <version>
 bun run release:check
 ```
 
-The version script updates every public package, refreshes the lockfile, checks release metadata, and formats the workspace. Review and commit the changes, then push a matching `v<version>` tag.
+Review and commit the generated changes, then push a matching `v<version>` tag.
 
 `release:check` builds and tests packages and runs `pack:check`. The packed consumer checks inspect tarball contents, resolve local dependency protocols, load exports under Node and Bun, and check browser and Bun TypeScript consumers.
 
@@ -30,4 +30,4 @@ After publishing, the workflow waits for all package versions to become installa
 
 ## Consumers
 
-Workspace consumers use `workspace:*`. External consumers use the published versions. Update related `@pgko.dev/*` dependencies together through the consumer repository's dependency policy.
+When consuming a published release, update related `@pgko.dev/*` dependencies together to the new version.
