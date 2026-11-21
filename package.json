@@ -39,7 +39,7 @@
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:"
   },
-  "packageManager": "bun@1.4.4",
+  "packageManager": "bun@1.4.5",
   "catalog": {
     "@apidevtools/swagger-parser": "13.1.0",
     "@base-ui/react": "^1.9.0",
@@ -67,7 +67,7 @@
     "@tanstack/react-store": "^0.11.2",
     "@tanstack/react-virtual": "^3.14.24",
     "@tanstack/router-plugin": "^1.168.48",
-    "@types/bun": "^1.4.4",
+    "@types/bun": "^1.4.5",
     "@types/mdx": "^2.0.14",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
