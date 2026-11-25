@@ -27,6 +27,14 @@ The normal manual run performs the workspace check. `skip_checks` builds the web
 
 Production routes and `API_ORIGIN` are configured in `apps/worker/wrangler.toml`. Manual dispatch checks the workspace before deployment; reusable calls build the Worker first.
 
+### ZIP download Worker
+
+Deploy `pgko-download` from `apps/worker` with `bunx wrangler deploy --config wrangler.download.toml`. The first deployment sets `S3_ORIGIN` and `S3_BUCKET`; later deployments retain those variables.
+
+The Worker keeps the API redirect contract and validates each signed request with R2 before using the shared ZIP cache. The edge caches successful ZIP responses by object ETag for one hour. Signed client URLs and failed responses are uncached.
+
+To restore direct R2 redirects, detach the `api.pgko.dev/api/download/bundles/*` route from `pgko-download`. Existing signed links on `download.pgko.dev` can still finish while the custom domain remains attached.
+
 ## API reference
 
 [`deploy-openapi.yml`](../.github/workflows/deploy-openapi.yml) builds `apps/openapi/dist` and deploys it to GitHub Pages using the `github-pages` environment.
