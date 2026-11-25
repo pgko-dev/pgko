@@ -1,0 +1,20 @@
+name = "pgko-download"
+main = "src/download.ts"
+compatibility_date = "2026-05-31"
+preview_urls = false
+workers_dev = false
+keep_vars = true
+
+routes = [
+  { pattern = "download.pgko.dev", custom_domain = true },
+  { pattern = "api.pgko.dev/api/download/bundles/*", zone_name = "pgko.dev" },
+]
+
+[vars]
+API_HOST = "api.pgko.dev"
+DOWNLOAD_ORIGIN = "https://download.pgko.dev"
+CDN_ORIGIN = "https://cdn.pgko.dev"
+
+[observability.logs]
+enabled = true
+invocation_logs = false
